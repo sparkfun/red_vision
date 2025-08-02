@@ -1,0 +1,3 @@
+[submodule "micropython-opencv"]
+	path = micropython-opencv
+	url = https://github.com/sparkfun/micropython-opencv.git

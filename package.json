@@ -1,0 +1,22 @@
+{
+    "urls": [
+        ["red_vision/__init__.py", "red_vision/__init__.py"],
+        ["red_vision/cameras/__init__.py", "red_vision/cameras/__init__.py"],
+        ["red_vision/cameras/cv2_camera.py", "red_vision/cameras/cv2_camera.py"],
+        ["red_vision/cameras/dvp_camera.py", "red_vision/cameras/dvp_camera.py"],
+        ["red_vision/cameras/dvp_rp2_pio.py", "red_vision/cameras/dvp_rp2_pio.py"],
+        ["red_vision/cameras/hm01b0_pio.py", "red_vision/cameras/hm01b0_pio.py"],
+        ["red_vision/cameras/hm01b0.py", "red_vision/cameras/hm01b0.py"],
+        ["red_vision/cameras/ov5640_pio.py", "red_vision/cameras/ov5640_pio.py"],
+        ["red_vision/cameras/ov5640.py", "red_vision/cameras/ov5640.py"],
+        ["red_vision/displays/__init__.py", "red_vision/displays/__init__.py"],
+        ["red_vision/displays/cv2_display.py", "red_vision/displays/cv2_display.py"],
+        ["red_vision/displays/st7789_pio.py", "red_vision/displays/st7789_pio.py"],
+        ["red_vision/displays/st7789_spi.py", "red_vision/displays/st7789_spi.py"],
+        ["red_vision/displays/st7789.py", "red_vision/displays/st7789.py"],
+        ["red_vision/touch_screens/__init__.py", "red_vision/touch_screens/__init__.py"],
+        ["red_vision/touch_screens/cst816.py", "red_vision/touch_screens/cst816.py"],
+        ["red_vision/touch_screens/cv2_touch_screen.py", "red_vision/touch_screens/cv2_touch_screen.py"]
+    ],
+    "version": "1.0.0"
+}
