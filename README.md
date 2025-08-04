@@ -62,10 +62,10 @@ For users wanting maximum performance, it may be desireable to bypass the high-l
 
 # Installing Red Vision with `mip`
 
-If you want to add the Red Vision package to a board that's already running MicroPython, you can easily install it using `mip`:
+If you want to add the Red Vision package to a board that's already running MicroPython, you can easily install it using [`mip`](https://docs.micropython.org/en/latest/reference/packages.html). For example, here's the [`mpremote`](https://docs.micropython.org/en/latest/reference/mpremote.html) command:
 
 ```
-mip install github:sparkfun/red_vision
+mpremote mip install github:sparkfun/red_vision
 ```
 
 ## Building Red Vision MicroPython Firmware
