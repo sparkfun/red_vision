@@ -6,8 +6,8 @@ from machine import SPI
 spi = SPI(
     # id = 0,
     baudrate = 24_000_000, # Use the fastest baudrate you can for best performance!
-    # sck = machine.Pin(2),
-    # mosi = machine.Pin(3),
-    # miso = machine.Pin(4),
+    # sck = 2,
+    # mosi = 3,
+    # miso = 4,
     # freq = 100_000
 )

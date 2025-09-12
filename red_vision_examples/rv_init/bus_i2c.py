@@ -5,7 +5,7 @@ from machine import I2C
 # specific board and configuration
 i2c = I2C(
     # id = 0,
-    # sda = machine.Pin(0),
-    # scl = machine.Pin(1),
+    # sda = 0,
+    # scl = 1,
     # freq = 400_000
 )
