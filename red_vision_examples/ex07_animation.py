@@ -14,7 +14,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display
 
 # Load an animation sheet image that contains multiple frames of an animation
 animation_sheet = cv.imread("red_vision_examples/images/animation_sheet.png")

@@ -12,11 +12,11 @@
 #-------------------------------------------------------------------------------
 
 # Import XRPLib defaults
-from XRPLib.defaults import *
+from XRPLib.defaults import drivetrain
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, touch_screen
 
 # Import NumPy
 from ulab import numpy as np

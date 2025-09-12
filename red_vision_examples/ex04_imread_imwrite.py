@@ -13,7 +13,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display
 
 # Call `cv.imread()` to read an image from the MicroPython filesystem, just
 # like in any other Python environment! Make sure to copy the image to the

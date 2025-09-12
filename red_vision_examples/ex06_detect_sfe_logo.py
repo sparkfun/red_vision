@@ -21,7 +21,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, camera
 
 # Import NumPy
 from ulab import numpy as np

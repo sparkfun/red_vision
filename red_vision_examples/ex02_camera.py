@@ -12,7 +12,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, camera
 
 # Open a camera, similar to any other Python environment! In standard OpenCV,
 # you would use `cv.VideoCapture(0)` or similar, and OpenCV would leverage the
