@@ -50,6 +50,9 @@ class HM01B0_PIO(HM01B0, DVP_RP2_PIO):
                 Default is 0x24
         """
         # Create the frame buffer
+        self._width = 324
+        self._height = 244
+        self._bytes_per_pixel = 1
         self._buffer = np.zeros((244, 324), dtype=np.uint8)
 
         # Call both parent constructors
@@ -63,7 +66,7 @@ class HM01B0_PIO(HM01B0, DVP_RP2_PIO):
             xclk_freq,
             sm_id,
             num_data_pins,
-            bytes_per_frame = self._buffer.size,
+            bytes_per_pixel = 2,
             byte_swap = True
         )
         HM01B0.__init__(
@@ -77,10 +80,10 @@ class HM01B0_PIO(HM01B0, DVP_RP2_PIO):
         """
         Opens the camera and prepares it for capturing images.
         """
-        self._active(True)
+        pass
 
     def release(self):
         """
         Releases the camera and frees any resources.
         """
-        self._active(False)
+        pass

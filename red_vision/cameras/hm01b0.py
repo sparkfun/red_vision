@@ -349,4 +349,5 @@ class HM01B0(DVP_Camera):
                 - success (bool): True if the image was read, otherwise False
                 - image (ndarray): The captured image, or None if reading failed
         """
+        self._capture()
         return (True, cv2.cvtColor(self._buffer, cv2.COLOR_BayerRG2BGR, image))

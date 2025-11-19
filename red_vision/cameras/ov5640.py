@@ -903,8 +903,8 @@ class OV5640(DVP_Camera):
         self._write_list(self._sensor_default_regs)
 
         self._colorspace = self._OV5640_COLOR_RGB
-        self._flip_x = False
-        self._flip_y = False
+        self._flip_x = True
+        self._flip_y = True
         self._w = None
         self._h = None
         self._size = self._OV5640_SIZE_QVGA
@@ -1180,6 +1180,7 @@ class OV5640(DVP_Camera):
                 - success (bool): True if the image was read, otherwise False
                 - image (ndarray): The captured image, or None if reading failed
         """
+        self._capture()
         if self._colorspace == self._OV5640_COLOR_RGB:
             return (True, cv2.cvtColor(self._buffer, cv2.COLOR_BGR5652BGR, image))
         elif self._colorspace == self._OV5640_COLOR_GRAYSCALE:
