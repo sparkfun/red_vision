@@ -109,7 +109,7 @@ class ST7789_PIO(ST7789):
         # The tx and clk pins just got their mode and alt set for PIO0 or PIO1.
         # We need to save them again to restore later when _write() is called,
         # if we haven't already
-        if not hasattr(self, 'txMode'):
+        if not hasattr(self, '_txMode'):
             self._txMode, self._txAlt = self._save_pin_mode_alt(self._tx)
             self._clkMode, self._clkAlt = self._save_pin_mode_alt(self._clk)
 
@@ -118,7 +118,7 @@ class ST7789_PIO(ST7789):
         self._clk.init(mode=clkMode, alt=clkAlt)
 
         # Instantiate a DMA controller if not already done
-        if not hasattr(self, 'dma'):
+        if not hasattr(self, '_dma'):
             self._dma = rp2.DMA()
 
         # Configure up DMA to write to the PIO state machine
