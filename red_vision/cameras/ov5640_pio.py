@@ -27,7 +27,7 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
         pin_hsync,
         pin_pclk,
         pin_xclk = None,
-        xclk_freq = 5_000_000,
+        xclk_freq = 20_000_000,
         i2c_address = 0x3c,
         buffer = None,
     ):
