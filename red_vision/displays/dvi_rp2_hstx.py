@@ -15,6 +15,7 @@
 #-------------------------------------------------------------------------------
 
 # Imports
+from .cv2_display import CV2_Display
 import rp2
 import machine
 import array
@@ -22,7 +23,7 @@ from uctypes import addressof
 import cv2 as cv
 from ulab import numpy as np
 
-class DVI_HSTX():
+class DVI_HSTX(CV2_Display):
     """
     OpenCV DVI display driver using an HSTX interface. Only available on
     Raspberry Pi RP2350.
@@ -184,17 +185,38 @@ class DVI_HSTX():
         # Start DVI output.
         self._start()
 
-    def imshow(self, img):
+    def imshow(self, image):
         """
         Shows a NumPy image on the display.
 
         Args:
             image (ndarray): Image to show
         """
-        # This is a placeholder implementation that directly copies the image.
-        if img.shape != self._buffer.shape:
-            raise ValueError("image shape does not match display buffer shape")
-        self._buffer[:] = img[:]
+        # Get the common ROI between the image and internal display buffer
+        image_roi, buffer_roi = self._get_common_roi_with_buffer(image)
+
+        # Ensure the image is in uint8 format
+        image_roi = self._convert_to_uint8(image_roi)
+
+        # Convert the image to current format and write it to the buffer
+        if self._color_mode == self.COLOR_GRAY8 or self._color_mode == self.COLOR_BGR233:
+            # OpenCV doesn't have a BGR233 conversion, so use grayscale since
+            # it's also 8-bit. If the input image is BGR233, the output will
+            # be unchanged.
+            self._convert_to_gray8(image_roi, buffer_roi)
+        elif self._color_mode == self.COLOR_BGR565:
+            self._convert_to_bgr565(image_roi, buffer_roi)
+        elif self._color_mode == self.COLOR_BGRA8888:
+            self._convert_to_bgra8888(image_roi, buffer_roi)
+        else:
+            raise ValueError("Unsupported color mode")
+
+    def clear(self):
+        """
+        Clears the display by filling it with black color.
+        """
+        # Clear the buffer by filling it with zeros (black)
+        self._buffer[:] = 0
 
     def _is_in_sram(self, data_addr):
         """
@@ -506,10 +528,11 @@ class DVI_HSTX():
         # The control blocks can change the executer's read and wite addresses,
         # transfer count, and control register settings on-the-fly. This allows
         # the pair of DMA channels to effectively move data between any memory
-        # locations, with various transfer sizes and settings, giving a lot of
-        # flexibility. For the most part, the read address and transfer count of
-        # the executer just changes between the timing signal data and pixel
-        # data, always sending to the HSTX FIFO.
+        # locations (including reconfiguring other peripherals by writing their
+        # control registers), with various transfer sizes and settings, giving a
+        # lot of flexibility. For the most part, the read address and transfer
+        # count of the executer just changes between the timing signal data and
+        # pixel data, always sending to the HSTX FIFO.
         # 
         # The 2 DMA channels continue triggering each other until the end of the
         # control block sequence, at which point the dispatcher needs to be
@@ -612,7 +635,8 @@ class DVI_HSTX():
             # registers; attempting to write to them causing the DMA to stop
             # with a bus error that is not immediately obvious... So, we need to
             # unlock DMA access to the XIP_CTRL registers.
-            ACCESSCTRL_XIP_CTRL_ADDR = 0x40060000 + 0xE0
+            ACCESSCTRL_BASE = 0x40060000
+            ACCESSCTRL_XIP_CTRL_ADDR = ACCESSCTRL_BASE + 0xE0
 
             # In the entire RP2350 datasheet, there is only one mention in
             # section 10.6 about password bits required to write the ACCESSCTRL
@@ -638,10 +662,10 @@ class DVI_HSTX():
         # Configure the dispatcher DMA channel with the restart frame control
         # block contents. Don't start it yet, `_start()` will do that.
         self._dma_dispatcher.config(
-            read = self._cb_restart_frame_nested[0],
-            write = self._cb_restart_frame_nested[1],
-            count = self._cb_restart_frame_nested[2],
-            ctrl = self._cb_restart_frame_nested[3],
+            read = self._cb_restart_frame_nested[0], # READ_ADDR
+            write = self._cb_restart_frame_nested[1], # WRITE_ADDR
+            count = self._cb_restart_frame_nested[2], # TRANS_COUNT
+            ctrl = self._cb_restart_frame_nested[3], # CTRL
             trigger = False,
         )
 
@@ -1084,49 +1108,3 @@ class DVI_HSTX():
         # be restarted, but it will still be ready to start the next frame. This
         # is a gentle way to stop all the DMAs after the current frame finishes.
         self._control_blocks[-2] = 3
-
-################################################################################
-# Temporary test code
-
-# Image size.
-width = 320
-height = 240
-
-# Create a DVI_HSTX display instance.
-display = DVI_HSTX(
-    width = width,
-    height = height,
-    # color_mode=DVI_HSTX.COLOR_BGR233,
-    # color_mode=DVI_HSTX.COLOR_GRAY8,
-    color_mode=DVI_HSTX.COLOR_BGR565,
-    # color_mode=DVI_HSTX.COLOR_BGRA8888,
-)
-
-# Create test image.
-orig = np.ones((height, width, 3), dtype=np.uint8) * 128
-orig = cv.ellipse(orig, (160, 120), (100, 50), 0, 0, 360, (0, 0, 0), -1)
-orig = cv.putText(orig, "Hello DVI!", (80, 200), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-orig = cv.putText(orig, "Red!", (20, 60), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-orig = cv.putText(orig, "Green!", (100, 60), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-orig = cv.putText(orig, "Blue!", (220, 60), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-orig[ 0:10, 0:10] = (0, 0, 255)
-orig[10:20, 0:10] = (0, 255, 0)
-orig[20:30, 0:10] = (255, 0, 0)
-orig[00:10,10:20] = (0, 255, 255)
-orig[10:20,10:20] = (255, 255, 0)
-orig[20:30,10:20] = (255, 0, 255)
-orig[ 0:30,20:30] = (255, 255, 255)
-
-# Show test image. Need to manually convert color format for now.
-# display.imshow(cv.cvtColor(orig, cv.COLOR_BGR2GRAY))
-display.imshow(cv.cvtColor(orig, cv.COLOR_BGR2BGR565))
-# display.imshow(cv.cvtColor(orig, cv.COLOR_BGR2BGRA))
-
-# Draw a color gradient test pattern directly into the display buffer.
-for i in range(256):
-    display._buffer[0:10, width - 256 + i] = i
-
-# When writing the display buffer directly, some pixels don't update until a
-# garbage collection cycle occurs. Still not sure why...
-import gc
-gc.collect()
