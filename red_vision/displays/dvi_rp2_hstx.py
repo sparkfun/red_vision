@@ -403,24 +403,7 @@ class DVI_HSTX(CV2_Display):
 
         # Set all HSTX pins (GPIO 12-19) to ALT function for HSTX output.
         for i in range(12, 20):
-            # Ideally, we'd simply use:
-            # 
-            # machine.Pin(i, mode=machine.Pin.ALT, alt=machine.Pin.ALT_HSTX)
-            # 
-            # But Pin.ALT_HSTX is not yet supported in MicroPython, so we set
-            # the alt function with direct register access instead.
-            machine.Pin(i, mode=machine.Pin.ALT)
-            
-            # Set the alt function to HSTX for this pin.
-            _IO_BANK0_ADDR = 0x40028000
-            _IO_BANK0_PIN_OFFSET = 0x8
-            _IO_BANK0_CTRL_OFFSET = 0x4
-            _IO_BANK0_ALT_HSTX = 0x0
-            machine.mem32[
-                _IO_BANK0_ADDR +
-                _IO_BANK0_PIN_OFFSET * i +
-                _IO_BANK0_CTRL_OFFSET
-            ] = _IO_BANK0_ALT_HSTX
+            machine.Pin(i, mode=machine.Pin.ALT, alt=machine.Pin.ALT_HSTX)
 
         # Setup the HSTX control register.
         # 
