@@ -101,6 +101,35 @@ class CV2_Display():
         else:
             raise ValueError(f"Unsupported image dtype: {image.dtype}")
 
+    def _convert_to_gray8(self, src, dst):
+        """
+        Converts an image to GRAY8 format.
+
+        Args:
+            src (ndarray): Input image
+            dst (ndarray): Output GRAY8 buffer
+        """
+        # Determine the number of channels in the image
+        if src.ndim < 3:
+            ch = 1
+        else:
+            ch = src.shape[2]
+
+        # Convert the image to GRAY8 format based on the number of channels
+        if ch == 1: # GRAY8
+            # Already in GRAY8 format
+            # For some reason, this is relatively slow and creates a new buffer:
+            # https://github.com/v923z/micropython-ulab/issues/726
+            dst[:] = src.reshape(dst.shape)
+        elif ch == 2: # BGR565
+            dst = cv2.cvtColor(src, cv2.COLOR_BGR5652GRAY, dst)
+        elif ch == 3: # BGR888
+            dst = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY, dst)
+        elif ch == 4: # BGRA8888
+            dst = cv2.cvtColor(src, cv2.COLOR_BGRA2GRAY, dst)
+        else:
+            raise ValueError("Unsupported number of channels in source image")
+
     def _convert_to_bgr565(self, src, dst):
         """
         Converts an image to BGR565 format.
@@ -116,16 +145,48 @@ class CV2_Display():
             ch = src.shape[2]
 
         # Convert the image to BGR565 format based on the number of channels
-        if ch == 1: # Grayscale
+        if ch == 1: # GRAY8
             dst = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR565, dst)
-        elif ch == 2: # Already in BGR565 format
+        elif ch == 2: # BGR565
+            # Already in BGR565 format
             # For some reason, this is relatively slow and creates a new buffer:
             # https://github.com/v923z/micropython-ulab/issues/726
-            dst[:] = src
-        elif ch == 3: # BGR
+            dst[:] = src.reshape(dst.shape)
+        elif ch == 3: # BGR888
             dst = cv2.cvtColor(src, cv2.COLOR_BGR2BGR565, dst)
+        elif ch == 4: # BGRA8888
+            dst = cv2.cvtColor(src, cv2.COLOR_BGRA2BGR565, dst)
         else:
-            raise ValueError("Image must be 1, 2 or 3 channels (grayscale, BGR565, or BGR)")
+            raise ValueError("Unsupported number of channels in source image")
+
+    def _convert_to_bgra8888(self, src, dst):
+        """
+        Converts an image to BGRA8888 format.
+
+        Args:
+            src (ndarray): Input image
+            dst (ndarray): Output BGRA8888 buffer
+        """
+        # Determine the number of channels in the image
+        if src.ndim < 3:
+            ch = 1
+        else:
+            ch = src.shape[2]
+
+        # Convert the image to BGRA8888 format based on the number of channels
+        if ch == 1: # GRAY8
+            dst = cv2.cvtColor(src, cv2.COLOR_GRAY2BGRA, dst)
+        elif ch == 2: # BGR565
+            dst = cv2.cvtColor(src, cv2.COLOR_BGR5652BGRA, dst)
+        elif ch == 3: # BGR888
+            dst = cv2.cvtColor(src, cv2.COLOR_BGR2BGRA, dst)
+        elif ch == 4: # BGRA8888
+            # Already in BGRA8888 format
+            # For some reason, this is relatively slow and creates a new buffer:
+            # https://github.com/v923z/micropython-ulab/issues/726
+            dst[:] = src.reshape(dst.shape)
+        else:
+            raise ValueError("Unsupported number of channels in source image")
 
     def _save_pin_mode_alt(self, pin):
         """

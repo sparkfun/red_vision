@@ -17,3 +17,4 @@ import sys
 # Import RP2 drivers
 if 'rp2' in sys.platform:
     from . import st7789_pio
+    from . import dvi_rp2_hstx
