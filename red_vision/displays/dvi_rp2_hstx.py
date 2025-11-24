@@ -229,10 +229,10 @@ class DVI_HSTX(CV2_Display):
         """
         # SRAM address range.
         SRAM_BASE = 0x20000000
-        total_sram_size = 520*1024 # 520 KB
+        SRAM_END = 0x20082000
         
         # Return whether address is in SRAM.
-        return data_addr >= SRAM_BASE and data_addr < SRAM_BASE + total_sram_size
+        return data_addr >= SRAM_BASE and data_addr < SRAM_END
 
     def _check_psram_transfer_speed(self):
         """
@@ -252,11 +252,11 @@ class DVI_HSTX(CV2_Display):
 
         # PSRAM timing register parameters.
         XIP_QMI_BASE = 0x400D0000
-        M1_TIMING_ADDR = XIP_QMI_BASE + 0x20
-        CLK_DIV_MASK = 0xFF
+        M1_TIMING = XIP_QMI_BASE + 0x20
+        CLKDIV_MASK = 0xFF
 
         # Get PSRAM clock divider, typically 2.
-        psram_clk_div = machine.mem32[M1_TIMING_ADDR] & CLK_DIV_MASK
+        psram_clk_div = machine.mem32[M1_TIMING] & CLKDIV_MASK
 
         # Compute PSRAM pixel transfer rate. PSRAM is on the QSPI bus, which
         # transfers 1 byte every 2 clock cycles.
@@ -619,7 +619,7 @@ class DVI_HSTX(CV2_Display):
             # with a bus error that is not immediately obvious... So, we need to
             # unlock DMA access to the XIP_CTRL registers.
             ACCESSCTRL_BASE = 0x40060000
-            ACCESSCTRL_XIP_CTRL_ADDR = ACCESSCTRL_BASE + 0xE0
+            XIP_CTRL = ACCESSCTRL_BASE + 0xE0
 
             # In the entire RP2350 datasheet, there is only one mention in
             # section 10.6 about password bits required to write the ACCESSCTRL
@@ -631,7 +631,7 @@ class DVI_HSTX(CV2_Display):
             # The default register value is 0b10111000, where bit 6 is the DMA
             # bit. It defaults to 0, so we just need to set it to 1, to allow
             # DMA access to the XIP_CTRL registers.
-            machine.mem32[ACCESSCTRL_XIP_CTRL_ADDR] = ACCESSCTRL_PASSWORD_BITS | 0b11111000
+            machine.mem32[XIP_CTRL] = ACCESSCTRL_PASSWORD_BITS | 0b11111000
 
         # Create DMA control register values.
         self._create_dma_ctrl_registers()
@@ -804,28 +804,28 @@ class DVI_HSTX(CV2_Display):
         # value that needs to be changed later, depending on whether the buffer
         # is in SRAM or PSRAM (see `_assemble_control_blocks()`).
         HSTX_FIFO_BASE = 0x50600000
-        HSTX_FIFO_ADDR = HSTX_FIFO_BASE + 0x4
+        HSTX_FIFO = HSTX_FIFO_BASE + 0x4
         self._cb_line_porch = array.array('I', [
             addressof(self._hstx_line_porch), # READ_ADDR
-            HSTX_FIFO_ADDR, # WRITE_ADDR
+            HSTX_FIFO, # WRITE_ADDR
             len(self._hstx_line_porch), # TRANS_COUNT
             self._dma_ctrl_hstx_commands, # CTRL_TRIG
         ])
         self._cb_line_vsync = array.array('I', [
             addressof(self._hstx_line_vsync), # READ_ADDR
-            HSTX_FIFO_ADDR, # WRITE_ADDR
+            HSTX_FIFO, # WRITE_ADDR
             len(self._hstx_line_vsync), # TRANS_COUNT
             self._dma_ctrl_hstx_commands, # CTRL_TRIG
         ])
         self._cb_line_active = array.array('I', [
             addressof(self._hstx_line_active), # READ_ADDR
-            HSTX_FIFO_ADDR, # WRITE_ADDR
+            HSTX_FIFO, # WRITE_ADDR
             len(self._hstx_line_active), # TRANS_COUNT
             self._dma_ctrl_hstx_commands, # CTRL_TRIG
         ])
         self._cb_line_pixels = array.array('I', [
             addressof(self._buffer), # READ_ADDR
-            HSTX_FIFO_ADDR, # WRITE_ADDR
+            HSTX_FIFO, # WRITE_ADDR
             self._width, # TRANS_COUNT
             self._dma_ctrl_hstx_pixels, # CTRL_TRIG
         ])
@@ -857,9 +857,10 @@ class DVI_HSTX(CV2_Display):
             # `_cb_fill_row_buffer_nested` control block to the streamer DMA
             # registers, triggering it to fill the row buffer with the next row
             # of pixels from the XIP stream FIFO.
-            XIP_STREAM_FIFO_ADDR = 0x50500000 + 0x00
+            XIP_AUX_BASE = 0x50500000
+            STREAM_FIFO = XIP_AUX_BASE + 0x00
             self._cb_fill_row_buffer_nested = array.array('I', [
-                XIP_STREAM_FIFO_ADDR, # READ_ADDR
+                STREAM_FIFO, # READ_ADDR
                 addressof(self._row_buffer), # WRITE_ADDR
                 self._bytes_per_row // 4, # TRANS_COUNT
                 self._dma_ctrl_streamer, # CTRL_TRIG
@@ -877,13 +878,13 @@ class DVI_HSTX(CV2_Display):
             # executer will write the nested `_cb_streamer_abort_nested` control
             # block to the CHAN_ABORT register, aborting the streamer DMA.
             DMA_BASE = 0x50000000
-            DMA_CHAN_ABORT_ADDR = DMA_BASE + 0x464
+            CHAN_ABORT = DMA_BASE + 0x464
             self._cb_streamer_abort_nested = array.array('I', [
                 1 << self._dma_streamer.channel # CHAN_ABORT
             ])
             self._cb_streamer_abort = array.array('I', [
                 addressof(self._cb_streamer_abort_nested), # READ_ADDR
-                DMA_CHAN_ABORT_ADDR, # WRITE_ADDR
+                CHAN_ABORT, # WRITE_ADDR
                 len(self._cb_streamer_abort_nested), # TRANS_COUNT
                 self._dma_ctrl_cb_executer_nested_repeat, # CTRL_TRIG
             ])
@@ -893,14 +894,15 @@ class DVI_HSTX(CV2_Display):
             # added to the control block sequence, the executer will write the
             # nested `_cb_xip_stream_start_nested` control block to the XIP
             # STREAM_ADDR and STREAM_CTR registers, starting the XIP stream.
-            XIP_STREAM_ADDR = 0x400C8000 + 0x14
+            XIP_CTRL_BASE = 0x400C8000
+            STREAM_ADDR = XIP_CTRL_BASE + 0x14
             self._cb_xip_stream_start_nested = array.array('I', [
                 addressof(self._buffer), # STREAM_ADDR
                 self._buffer.size, # STREAM_CTR
             ])
             self._cb_xip_stream_start = array.array('I', [
                 addressof(self._cb_xip_stream_start_nested), # READ_ADDR
-                XIP_STREAM_ADDR, # WRITE_ADDR
+                STREAM_ADDR, # WRITE_ADDR
                 len(self._cb_xip_stream_start_nested), # TRANS_COUNT
                 self._dma_ctrl_cb_executer_nested_repeat, # CTRL_TRIG
             ])
