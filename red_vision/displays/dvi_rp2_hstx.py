@@ -508,7 +508,7 @@ class DVI_HSTX(CV2_Display):
         # +---------------------------+
         #            RP2350
         # 
-        # The control blocks can change the executer's read and wite addresses,
+        # The control blocks can change the executer's read and write addresses,
         # transfer count, and control register settings on-the-fly. This allows
         # the pair of DMA channels to effectively move data between any memory
         # locations (including reconfiguring other peripherals by writing their
