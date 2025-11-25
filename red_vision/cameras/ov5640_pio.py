@@ -27,8 +27,10 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
         pin_hsync,
         pin_pclk,
         pin_xclk = None,
-        xclk_freq = 5_000_000,
-        i2c_address = 0x3c
+        xclk_freq = 20_000_000,
+        i2c_address = 0x3c,
+        buffer = None,
+        continuous = False,
     ):
         """
         Initializes the OV5640 PIO camera driver.
@@ -47,7 +49,14 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
                 Default is 0x3c
         """
         # Create the frame buffer
-        self._buffer = np.zeros((240, 320, 2), dtype=np.uint8)
+        if buffer is not None:
+            self._buffer = buffer
+            self._height, self._width, self._bytes_per_pixel = buffer.shape
+        else:
+            self._width = 320
+            self._height = 240
+            self._bytes_per_pixel = 2
+            self._buffer = np.zeros((240, 320, 2), dtype=np.uint8)
 
         # Call both parent constructors
         DVP_RP2_PIO.__init__(
@@ -60,8 +69,9 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
             xclk_freq,
             sm_id,
             num_data_pins = 8,
-            bytes_per_frame = self._buffer.size,
-            byte_swap = False
+            bytes_per_pixel = 2,
+            byte_swap = False,
+            continuous = continuous,
         )
         OV5640.__init__(
             self,
@@ -73,10 +83,10 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
         """
         Opens the camera and prepares it for capturing images.
         """
-        self._active(True)
+        pass
 
     def release(self):
         """
         Releases the camera and frees any resources.
         """
-        self._active(False)
+        pass
