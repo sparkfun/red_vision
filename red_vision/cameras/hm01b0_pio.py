@@ -30,6 +30,7 @@ class HM01B0_PIO(HM01B0, DVP_RP2_PIO):
         xclk_freq = 25_000_000,
         num_data_pins = 1,
         i2c_address = 0x24,
+        continuous = False,
     ):
         """
         Initializes the HM01B0 PIO camera driver.
@@ -67,7 +68,8 @@ class HM01B0_PIO(HM01B0, DVP_RP2_PIO):
             sm_id,
             num_data_pins,
             bytes_per_pixel = 2,
-            byte_swap = True
+            byte_swap = True,
+            continuous = continuous,
         )
         HM01B0.__init__(
             self,

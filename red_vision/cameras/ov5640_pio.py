@@ -30,6 +30,7 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
         xclk_freq = 20_000_000,
         i2c_address = 0x3c,
         buffer = None,
+        continuous = False,
     ):
         """
         Initializes the OV5640 PIO camera driver.
@@ -69,7 +70,8 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
             sm_id,
             num_data_pins = 8,
             bytes_per_pixel = 2,
-            byte_swap = False
+            byte_swap = False,
+            continuous = continuous,
         )
         OV5640.__init__(
             self,

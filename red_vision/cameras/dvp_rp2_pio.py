@@ -37,7 +37,8 @@ class DVP_RP2_PIO():
         sm_id,
         num_data_pins,
         bytes_per_pixel,
-        byte_swap
+        byte_swap,
+        continuous = False
     ):
         """
         Initializes the DVP interface with the specified parameters.
@@ -53,6 +54,7 @@ class DVP_RP2_PIO():
             num_data_pins (int): Number of data pins used in DVP interface
             bytes_per_pixel (int): Number of bytes per pixel
             byte_swap (bool): Whether to swap bytes in the captured data
+            continuous (bool): Whether to continuously capture frames
         """
         # Store pin assignments
         self._pin_d0 = pin_d0
@@ -78,6 +80,9 @@ class DVP_RP2_PIO():
         # Store transfer parameters
         self._bytes_per_pixel = bytes_per_pixel
         self._byte_swap = byte_swap
+        
+        # Whether to continuously capture frames
+        self._continuous = continuous
 
         # Set up the PIO state machine
         self._sm_id = sm_id
@@ -363,7 +368,8 @@ class DVP_RP2_PIO():
         num_cb = 0
         if not self._buffer_is_in_psram:
             num_cb += 1 # PIO read control block
-            num_cb += 1 # Restart frame control block
+            if self._continuous:
+                num_cb += 1 # Restart frame control block
         else:
             num_cb += self._height # PIO read control blocks
             num_cb += self._height # Streamer control blocks
@@ -405,18 +411,19 @@ class DVP_RP2_PIO():
             # executer to write the nested `_cb_restart_frame_nested` control
             # block back to the dispatcher DMA registers, restarting it from the
             # beginning of the control block sequence.
-            self._cb_restart_frame_nested = array.array('I', [
-                addressof(self._control_blocks), # READ_ADDR
-                addressof(self._dma_executer.registers), # WRITE_ADDR
-                4, # TRANS_COUNT
-                self._dma_ctrl_cb_dispatcher, # CTRL_TRIG
-            ])
-            self._cb_restart_frame = array.array('I', [
-                addressof(self._cb_restart_frame_nested), # READ_ADDR
-                addressof(self._dma_dispatcher.registers), # WRITE_ADDR
-                len(self._cb_restart_frame_nested), # TRANS_COUNT
-                self._dma_ctrl_cb_executer_nested_single, # CTRL_TRIG
-            ])
+            if self._continuous:
+                self._cb_restart_frame_nested = array.array('I', [
+                    addressof(self._control_blocks), # READ_ADDR
+                    addressof(self._dma_executer.registers), # WRITE_ADDR
+                    4, # TRANS_COUNT
+                    self._dma_ctrl_cb_dispatcher, # CTRL_TRIG
+                ])
+                self._cb_restart_frame = array.array('I', [
+                    addressof(self._cb_restart_frame_nested), # READ_ADDR
+                    addressof(self._dma_dispatcher.registers), # WRITE_ADDR
+                    len(self._cb_restart_frame_nested), # TRANS_COUNT
+                    self._dma_ctrl_cb_executer_nested_single, # CTRL_TRIG
+                ])
         else:
             # Control block for executer to read 1 row from PIO RX FIFO to image
             # buffer.
@@ -468,8 +475,10 @@ class DVP_RP2_PIO():
             # FIFO to image buffer.
             self._add_control_block(self._cb_pio_repeat)
 
-            # Add control block to restart by reconfiguring the dispatcher DMA.
-            self._add_control_block(self._cb_restart_frame)
+            # If continuous mode is requested, add control block to restart the
+            # control block sequence reconfiguring the dispatcher DMA.
+            if self._continuous:
+                self._add_control_block(self._cb_restart_frame)
         else:
             # Loop through each row of the image.
             for row in range(self._height):
@@ -542,10 +551,10 @@ class DVP_RP2_PIO():
         # Start the dispatcher DMA channel.
         self._dma_dispatcher.active(True)
 
-        # If the buffer is in SRAM, the control block sequence will restart
-        # automatically, so nothing else to do. But if the buffer is in PSRAM,
-        # we need to wait for the frame to finish.
-        if self._buffer_is_in_psram:
+        # If the buffer is in SRAM and we're in continuous mode, the control
+        # block sequence will restart automatically, so nothing else to do. But
+        # if the buffer is in PSRAM, we need to wait for the frame to finish.
+        if self._buffer_is_in_psram or self._continuous == False:
             # Wait for VSYNC to go high then low again, indicating the end of
             # the next frame.
             while Pin(self._pin_vsync, Pin.IN).value() == False:
