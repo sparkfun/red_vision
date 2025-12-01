@@ -52,13 +52,14 @@ Hardware support in this repository is mostly limited to SparkFun Red Vision pro
 | Status | Device | Notes |
 | --- | --- | --- |
 | ✔️ | [HM01B0](https://www.sparkfun.com/sparkfun-red-vision-camera-board-hm01b0-color.html) | |
-| ⚠️ | [OV5640](https://www.sparkfun.com/ov5640-camera-board-5-megapixel-2592x1944-fisheye-lens.html) | See [#1](https://github.com/sparkfun/red_vision/issues/1) |
+| ✔️ | [OV5640](https://www.sparkfun.com/ov5640-camera-board-5-megapixel-2592x1944-fisheye-lens.html) | |
 
 ## Display Drivers
 
 | Status | Device | Notes |
 | --- | --- | --- |
 | ✔️ | [ST7789](https://www.sparkfun.com/sparkfun-red-vision-touch-display-for-pico.html) | |
+| ✔️ | [DVI/HDMI](https://www.sparkfun.com/sparkfun-hstx-to-dvi-breakout.html) | RP2350 HSTX only |
 
 ## Touch Screen Drivers
 
