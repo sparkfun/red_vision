@@ -123,7 +123,8 @@ class DVI_HSTX(CV2_Display):
             pin_d1_p   = 16,
             pin_d1_n   = 17,
             pin_d2_p   = 12,
-            pin_d2_n   = 13
+            pin_d2_n   = 13,
+            buffer = None,
         ):
         """
         Initializes the DVI HSTX display driver.
@@ -144,6 +145,7 @@ class DVI_HSTX(CV2_Display):
             pin_d1_n (int, optional): TMDS data 1 lane negative pin (default: 17)
             pin_d2_p (int, optional): TMDS data 2 lane positive pin (default: 12)
             pin_d2_n (int, optional): TMDS data 2 lane negative pin (default: 13)
+            buffer (ndarray, optional): Pre-allocated frame buffer.
         """
         # Set pin numbers.
         self._pin_clk_p = pin_clk_p
@@ -171,10 +173,13 @@ class DVI_HSTX(CV2_Display):
         self._height_scale = self._V_ACTIVE_LINES // height
 
         # Create the image buffer.
-        self._buffer = np.zeros(
-            (height, width, self._bytes_per_pixel),
-            dtype = np.uint8
-        )
+        if buffer is not None:
+            self._buffer = buffer
+        else:
+            self._buffer = np.zeros(
+                (height, width, self._bytes_per_pixel),
+                dtype = np.uint8
+            )
 
         # Configure HSTX peripheral.
         self._configure_hstx()
