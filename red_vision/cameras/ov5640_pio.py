@@ -47,6 +47,8 @@ class OV5640_PIO(OV5640, DVP_RP2_PIO):
                 Default is 5 MHz
             i2c_address (int, optional): I2C address of the camera
                 Default is 0x3c
+            buffer (ndarray, optional): Pre-allocated frame buffer.
+            continuous (bool, optional): Whether to run in continuous mode.
         """
         # Create the frame buffer
         if buffer is not None:
