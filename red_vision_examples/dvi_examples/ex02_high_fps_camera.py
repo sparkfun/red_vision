@@ -78,26 +78,10 @@ camera = ov5640_pio.OV5640_PIO(
     pin_pclk = 40,
     pin_xclk = 44, # Optional xclock pin, specify if needed
     xclk_freq = 20_000_000,
-    buffer = display._buffer,
+    buffer = buffer,
     continuous = True,
 )
 
 # Open the camera to start the continuous capture process.
 camera.open()
 camera._capture()
-
-# If the ST7789 display is also connected, it can be controlled independently
-# of the DVI display. For example, we can show a splash screen on it:
-from red_vision.displays import st7789_pio
-spi = machine.SPI(baudrate=24_000_000)
-display2 = st7789_pio.ST7789_PIO(
-    width = 240,
-    height = 320,
-    sm_id = 4,
-    pin_clk = 22,
-    pin_tx = 23,
-    pin_dc = 20,
-    pin_cs = 21,
-    rotation = 1
-)
-display2.splash("red_vision_examples/images/splash.png")
