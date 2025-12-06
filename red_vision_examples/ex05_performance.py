@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex05_performance.py
+# red_vision_examples/ex05_performance.py
 # 
 # This example demonstrates some performance optimization techniques, and ways
 # to measure performance in the MicroPython port of OpenCV. Read through the

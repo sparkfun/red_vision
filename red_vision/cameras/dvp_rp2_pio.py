@@ -3,11 +3,10 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# dvp_rp2_pio.py
+# red_vision/cameras/dvp_rp2_pio.py
 #
-# This class implements a DVP (Digital Video Port) interface using the RP2 PIO
-# (Programmable Input/Output) interface. This is only available on Raspberry Pi
-# RP2 processors.
+# Red Vision DVP (Digital Video Port) camera interface using the RP2 PIO
+# (Programmable Input/Output). Only available on Raspberry Pi RP2 processors.
 # 
 # This class is derived from:
 # https://github.com/adafruit/Adafruit_ImageCapture/blob/main/src/arch/rp2040.cpp
@@ -19,26 +18,21 @@ import rp2
 import array
 from machine import Pin, PWM
 from uctypes import addressof
+from ..utils import memory
 
 class DVP_RP2_PIO():
     """
-    This class implements a DVP (Digital Video Port) interface using the RP2 PIO
-    (Programmable Input/Output) interface. This is only available on Raspberry
-    Pi RP2 processors.
+    Red Vision DVP (Digital Video Port) camera interface using the RP2 PIO
+    (Programmable Input/Output). Only available on Raspberry Pi RP2 processors.
     """
     def __init__(
         self,
+        sm_id,
         pin_d0,
         pin_vsync,
         pin_hsync,
         pin_pclk,
-        pin_xclk,
-        xclk_freq,
-        sm_id,
-        num_data_pins,
-        bytes_per_pixel,
-        byte_swap,
-        continuous = False
+        pin_xclk = None,
     ):
         """
         Initializes the DVP interface with the specified parameters.
@@ -62,34 +56,53 @@ class DVP_RP2_PIO():
         self._pin_hsync = pin_hsync
         self._pin_pclk = pin_pclk
         self._pin_xclk = pin_xclk
+        self._sm_id = sm_id
+
+    def begin(
+            self,
+            buffer,
+            xclk_freq,
+            num_data_pins,
+            byte_swap,
+            continuous = False,
+        ):
+        self._buffer = buffer
+        self._height, self._width, self._bytes_per_pixel = buffer.shape
 
         # Initialize DVP pins as inputs
         self._num_data_pins = num_data_pins
         for i in range(num_data_pins):
-            Pin(pin_d0+i, Pin.IN)
-        Pin(pin_vsync, Pin.IN)
-        Pin(pin_hsync, Pin.IN)
-        Pin(pin_pclk, Pin.IN)
+            Pin(self._pin_d0+i, Pin.IN)
+        Pin(self._pin_vsync, Pin.IN)
+        Pin(self._pin_hsync, Pin.IN)
+        Pin(self._pin_pclk, Pin.IN)
 
         # Set up XCLK pin if provided
         if self._pin_xclk is not None:
-            self._xclk = PWM(Pin(pin_xclk))
+            self._xclk = PWM(Pin(self._pin_xclk))
             self._xclk.freq(xclk_freq)
             self._xclk.duty_u16(32768) # 50% duty cycle
 
         # Store transfer parameters
-        self._bytes_per_pixel = bytes_per_pixel
         self._byte_swap = byte_swap
         
         # Whether to continuously capture frames
         self._continuous = continuous
 
         # Set up the PIO state machine
-        self._sm_id = sm_id
         self._setup_pio()
 
         # Set up the DMA controllers
         self._setup_dmas()
+
+    def buffer(self):
+        """
+        Returns the current frame buffer from the camera.
+
+        Returns:
+            ndarray: Frame buffer
+        """
+        return self._buffer
 
     def _setup_pio(self):
         # Copy the PIO program
@@ -127,22 +140,6 @@ class DVP_RP2_PIO():
         wait(1, gpio, 0) # Mask in PCLK pin
         in_(pins, 32)    # Mask in number of pins
         wait(0, gpio, 0) # Mask in PCLK pin
-
-    def _is_in_sram(self, data_addr):
-        """
-        Checks whether a given memory address is in SRAM.
-
-        Args:
-            data_addr (int): Memory address to check
-        Returns:
-            bool: True if address is in SRAM, False otherwise
-        """
-        # SRAM address range.
-        SRAM_BASE = 0x20000000
-        total_sram_size = 520*1024 # 520 KB
-        
-        # Return whether address is in SRAM.
-        return data_addr >= SRAM_BASE and data_addr < SRAM_BASE + total_sram_size
 
     def _setup_dmas(self):
         """
@@ -239,7 +236,7 @@ class DVP_RP2_PIO():
         self._dma_executer = rp2.DMA()
 
         # Check if the display buffer is in PSRAM.
-        self._buffer_is_in_psram = not self._is_in_sram(addressof(self._buffer))
+        self._buffer_is_in_psram = memory.is_in_external_ram(self._buffer)
 
         # If the buffer is in PSRAM, create the streamer DMA channel and row
         # buffer in SRAM.
@@ -253,7 +250,7 @@ class DVP_RP2_PIO():
 
             # Verify row buffer is in SRAM. If not, we'll still have the same
             # latency problem.
-            if not self._is_in_sram(addressof(self._row_buffer)):
+            if memory.is_in_external_ram(self._row_buffer):
                 raise MemoryError("not enough space in SRAM for row buffer")
 
         # Create DMA control register values.

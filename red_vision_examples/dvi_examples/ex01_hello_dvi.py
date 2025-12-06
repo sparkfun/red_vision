@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex01_hello_dvi.py
+# red_vision_examples/dvi_examples/ex01_hello_dvi.py
 # 
 # This example can be used to verify that DVI output is functioning correctly
 # on your board. It creates a simple test image with various colors and shapes,
@@ -11,9 +11,8 @@
 #-------------------------------------------------------------------------------
 
 # This example does not use the `rv_init` module, in order to demonstrate some
-# more advanced features of the DVI display driver. So we instead import the
-# display driver here.
-from red_vision.displays import dvi_rp2_hstx
+# more advanced features. The initialization is done directly in this example.
+import red_vision as rv
 
 # Import OpenCV and NumPy.
 import cv2 as cv
@@ -25,18 +24,23 @@ from ulab import numpy as np
 width = 320
 height = 240
 
-# Create the singleston DVI_HSTX display instance.
-display = dvi_rp2_hstx.DVI_HSTX(
-    width = width,
-    height = height,
+# 4 different color modes are supported, though not all color modes can be
+# used with all resolutions due to memory constraints.
+# color_mode = rv.colors.COLOR_MODE_BGR233
+# color_mode = rv.colors.COLOR_MODE_GRAY8
+color_mode = rv.colors.COLOR_MODE_BGR565
+# color_mode = rv.colors.COLOR_MODE_BGRA8888
 
-    # 4 different color modes are supported, though not all color modes can be
-    # used with all resolutions due to memory constraints.
-    # color_mode = dvi_rp2_hstx.DVI_HSTX.COLOR_BGR233,
-    # color_mode = dvi_rp2_hstx.DVI_HSTX.COLOR_GRAY8,
-    color_mode = dvi_rp2_hstx.DVI_HSTX.COLOR_BGR565,
-    # color_mode = dvi_rp2_hstx.DVI_HSTX.COLOR_BGRA8888,
+# Create a buffer for the display to use. This is not usually necessary, but it
+# allows us to directly mofify the display buffer later for demonstration.
+bytes_per_pixel = rv.colors.bytes_per_pixel(color_mode)
+buffer = np.zeros(
+    (height, width, bytes_per_pixel),
+    dtype = np.uint8
+)
 
+# Create the HSTX interface.
+interface = rv.displays.DVI_RP2_HSTX(
     # Pins default to the SparkFun HSTX to DVI Breakout:
     # https://www.sparkfun.com/sparkfun-hstx-to-dvi-breakout.html
     # pin_clk_p = 14,
@@ -46,12 +50,30 @@ display = dvi_rp2_hstx.DVI_HSTX(
     # pin_d1_p  = 16,
     # pin_d1_n  = 17,
     # pin_d2_p  = 12,
-    # pin_d2_n  = 13
+    # pin_d2_n  = 13,
 )
+
+# Initialize the DVI driver.
+driver = rv.displays.DVI(
+    interface = interface,
+
+    # Optionally specify the image resolution.
+    height = height,
+    width = width,
+
+    # Optionally specify the image color mode.
+    color_mode = color_mode,
+
+    # Optionally specify the image buffer to use.
+    buffer = buffer,
+)
+
+# Create the VideoDisplay object.
+display = rv.displays.VideoDisplay(driver)
 
 # OpenCV doesn't have a BGR233 color conversion, so if we're using that mode,
 # we need to create our test image with single channel values.
-if display._color_mode == dvi_rp2_hstx.DVI_HSTX.COLOR_BGR233:
+if driver.color_mode() == rv.colors.COLOR_MODE_BGR233:
     image_channels = 1
     # BGR233 packs each byte as follows: RRRGGGBB
     color_red     = (0xE0)
@@ -96,28 +118,11 @@ display.imshow(img)
 
 # Draw a color gradient test pattern directly into the display buffer.
 for i in range(256):
-    display._buffer[0:10, width - 256 + i] = i
+    buffer[0:10, width - 256 + i] = i
 
-# When writing the display buffer directly, if its buffer is in PSRAM, some
-# pixels may not update until a garbage collection cycle occurs. This is because
-# the DVI driver uses the XIP streaming interface to read directly from PSRAM,
-# which bypasses the XIP cache.
-if display._buffer_is_in_psram:
+# If the display buffer is in PSRAM, some pixels may not update until a garbage
+# collection occurs. This is because the DVI driver uses the XIP streaming
+# interface to read directly from PSRAM, which bypasses the XIP cache.
+if rv.utils.memory.is_in_external_ram(buffer):
     import gc
     gc.collect()
-
-# If the ST7789 display is also connected, it can be controlled independently
-# of the DVI display. For example, we can show a splash screen on it:
-from red_vision.displays import st7789_pio
-spi = machine.SPI(baudrate=24_000_000)
-display2 = st7789_pio.ST7789_PIO(
-    width = 240,
-    height = 320,
-    sm_id = 4,
-    pin_clk = 22,
-    pin_tx = 23,
-    pin_dc = 20,
-    pin_cs = 21,
-    rotation = 1
-)
-display2.splash("red_vision_examples/images/splash.png")

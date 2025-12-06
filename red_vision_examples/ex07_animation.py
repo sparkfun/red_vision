@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex07_animation.py
+# red_vision_examples/ex07_animation.py
 # 
 # This example demonstrates how to play an animation using a series of frames
 # stored in a single image file. It assumes full 320x240 frames are stacked

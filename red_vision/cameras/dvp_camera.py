@@ -3,21 +3,25 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# dvp_camera.py
+# red_vision/cameras/dvp_camera.py
 # 
-# Base class for OpenCV DVP (Digital Video Port) camera drivers.
+# Red Vision abstract base class for DVP (Digital Video Port) camera drivers.
 #-------------------------------------------------------------------------------
 
-from .cv2_camera import CV2_Camera
+from .video_capture_driver import VideoCaptureDriver
 
-class DVP_Camera(CV2_Camera):
+class DVP_Camera(VideoCaptureDriver):
     """
-    Base class for OpenCV DVP (Digital Video Port) camera drivers.
+    Red Vision abstract base class for DVP (Digital Video Port) camera drivers.
     """
     def __init__(
         self,
         i2c,
-        i2c_address
+        i2c_address,
+        height = None,
+        width = None,
+        color_mode = None,
+        buffer = None,
     ):
         """
         Initializes the DVP camera with I2C communication.
@@ -26,7 +30,7 @@ class DVP_Camera(CV2_Camera):
             i2c (I2C): I2C object for communication
             i2c_address (int): I2C address of the camera
         """
-        super().__init__()
+        super().__init__(height, width, color_mode, buffer)
 
         self._i2c = i2c
         self._i2c_address = i2c_address

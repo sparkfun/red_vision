@@ -1,16 +1,22 @@
-# Initializes a touch screen object. Multiple options are provided below, so you
-# can choose one that best fits your needs. You may need to adjust the arguments
-# based on your specific touch screen and board configuration
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# 
+# Copyright (c) 2025 SparkFun Electronics
+#-------------------------------------------------------------------------------
+# red_vision_examples/rv_init/touch_screen.py
+# 
+# This example module initializes a Red Vision touch screen object.
+#-------------------------------------------------------------------------------
 
-# Import the OpenCV touch screen drivers
-from red_vision.touch_screens import *
-
-# Import the I2C bus
-from .bus_i2c import i2c
+# Import the Red Vision package.
+import red_vision as rv
 
 ################################################################################
 # CST816
 ################################################################################
 
+# Import the I2C bus
+from .bus_i2c import i2c
+
 # I2C interface
-touch_screen = cst816.CST816(i2c)
+touch_screen = rv.touch_screens.CST816(i2c)

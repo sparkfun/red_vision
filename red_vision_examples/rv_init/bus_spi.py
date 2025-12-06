@@ -1,3 +1,13 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# 
+# Copyright (c) 2025 SparkFun Electronics
+#-------------------------------------------------------------------------------
+# red_vision_examples/rv_init/bus_spi.py
+# 
+# This example module initializes an SPI bus for use with other devices.
+#-------------------------------------------------------------------------------
+
 # Import the machine.SPI class
 from machine import SPI
 
@@ -9,5 +19,4 @@ spi = SPI(
     # sck = 2,
     # mosi = 3,
     # miso = 4,
-    # freq = 100_000
 )

@@ -1,12 +1,12 @@
-
 #-------------------------------------------------------------------------------
 # SPDX-License-Identifier: MIT
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# dvp_rp2_hstx.py
-#
-# OpenCV DVI display driver using the RP2350 HSTX interface.
+# red_vision/displays/dvi_rp2_hstx.py
+# 
+# Red Vision DVI/HDMI display driver using the RP2350 HSTX interface. Only
+# available on Raspberry Pi RP2 processors.
 # 
 # This class is partially derived from:
 # https://github.com/adafruit/circuitpython/blob/main/ports/raspberrypi/common-hal/picodvi/Framebuffer_RP2350.c
@@ -15,28 +15,22 @@
 #-------------------------------------------------------------------------------
 
 # Imports
-from .cv2_display import CV2_Display
 import rp2
 import machine
 import array
 from uctypes import addressof
-import cv2 as cv
 from ulab import numpy as np
+from ..utils import colors
+from ..utils import memory
 
-class DVI_HSTX(CV2_Display):
+class DVI_RP2_HSTX():
     """
-    OpenCV DVI display driver using an HSTX interface. Only available on
-    Raspberry Pi RP2350.
+    Red Vision DVI/HDMI display driver using the RP2350 HSTX interface. Only
+    available on Raspberry Pi RP2 processors.
 
     Because the HSTX is capable of double data rate (DDR) signaling, it is the
     fastest way to output DVI from the RP2350.
     """
-    # Supported color modes.
-    COLOR_BGR233 = 0
-    COLOR_GRAY8 = 1
-    COLOR_BGR565 = 2
-    COLOR_BGRA8888 = 3
-
     # Below is a reference video timing diagram. Source:
     # https://projectf.io/posts/video-timings-vga-720p-1080p/#video-signals-in-brief
     # 
@@ -113,9 +107,6 @@ class DVI_HSTX(CV2_Display):
 
     def __init__(
             self,
-            width,
-            height,
-            color_mode = COLOR_BGR565,
             pin_clk_p  = 14,
             pin_clk_n  = 15,
             pin_d0_p   = 18,
@@ -124,7 +115,6 @@ class DVI_HSTX(CV2_Display):
             pin_d1_n   = 17,
             pin_d2_p   = 12,
             pin_d2_n   = 13,
-            buffer = None,
         ):
         """
         Initializes the DVI HSTX display driver.
@@ -157,29 +147,18 @@ class DVI_HSTX(CV2_Display):
         self._pin_d2_p = pin_d2_p
         self._pin_d2_n = pin_d2_n
 
-        # Set color mode and bytes per pixel.
+    def begin(self, buffer, color_mode):
+        """
+        Begins DVI output.
+        """
+        # Store buffer and color mode.
+        self._buffer = buffer
         self._color_mode = color_mode
-        if color_mode == self.COLOR_BGR233 or color_mode == self.COLOR_GRAY8:
-            self._bytes_per_pixel = 1
-        elif color_mode == self.COLOR_BGR565:
-            self._bytes_per_pixel = 2
-        elif color_mode == self.COLOR_BGRA8888:
-            self._bytes_per_pixel = 4
+        self._height, self._width, self._bytes_per_pixel = self._buffer.shape
 
         # Set resolution and scaling factors.
-        self._width = width
-        self._height = height
-        self._width_scale = self._H_ACTIVE_PIXELS // width
-        self._height_scale = self._V_ACTIVE_LINES // height
-
-        # Create the image buffer.
-        if buffer is not None:
-            self._buffer = buffer
-        else:
-            self._buffer = np.zeros(
-                (height, width, self._bytes_per_pixel),
-                dtype = np.uint8
-            )
+        self._width_scale = self._H_ACTIVE_PIXELS // self._width
+        self._height_scale = self._V_ACTIVE_LINES // self._height
 
         # Configure HSTX peripheral.
         self._configure_hstx()
@@ -190,98 +169,49 @@ class DVI_HSTX(CV2_Display):
         # Start DVI output.
         self._start()
 
-    def imshow(self, image):
+    def resolution_default(self):
         """
-        Shows a NumPy image on the display.
+        Returns the default resolution for the display.
+        """
+        return (self._V_ACTIVE_LINES // 2, self._H_ACTIVE_PIXELS // 2)
+
+    def resolution_is_supported(self, height, width):
+        """
+        Checks if the given resolution is supported by the display.
 
         Args:
-            image (ndarray): Image to show
-        """
-        # Get the common ROI between the image and internal display buffer
-        image_roi, buffer_roi = self._get_common_roi_with_buffer(image)
-
-        # Ensure the image is in uint8 format
-        image_roi = self._convert_to_uint8(image_roi)
-
-        # Convert the image to current format and write it to the buffer
-        if self._color_mode == self.COLOR_GRAY8 or self._color_mode == self.COLOR_BGR233:
-            # OpenCV doesn't have a BGR233 conversion, so use grayscale since
-            # it's also 8-bit. If the input image is BGR233, the output will
-            # be unchanged.
-            self._convert_to_gray8(image_roi, buffer_roi)
-        elif self._color_mode == self.COLOR_BGR565:
-            self._convert_to_bgr565(image_roi, buffer_roi)
-        elif self._color_mode == self.COLOR_BGRA8888:
-            self._convert_to_bgra8888(image_roi, buffer_roi)
-        else:
-            raise ValueError("Unsupported color mode")
-
-    def clear(self):
-        """
-        Clears the display by filling it with black color.
-        """
-        # Clear the buffer by filling it with zeros (black)
-        self._buffer[:] = 0
-
-    def _is_in_sram(self, data_addr):
-        """
-        Checks whether a given memory address is in SRAM.
-
-        Args:
-            data_addr (int): Memory address to check
+            height (int): Height in pixels
+            width (int): Width in pixels
         Returns:
-            bool: True if address is in SRAM, False otherwise
+            bool: True if the resolution is supported, otherwise False
         """
-        # SRAM address range.
-        SRAM_BASE = 0x20000000
-        SRAM_END = 0x20082000
+        # Check if width and height are factors of active pixels/lines.
+        width_supported = (self._H_ACTIVE_PIXELS % width == 0)
+        height_supported = (self._V_ACTIVE_LINES % height == 0)
+
+        # Check if either is not a factor.
+        if not width_supported or not height_supported:
+            return False
         
-        # Return whether address is in SRAM.
-        return data_addr >= SRAM_BASE and data_addr < SRAM_END
+        # Both are factors, but width can only be upscaled to a maximum of 32x.
+        return self._H_ACTIVE_PIXELS / width <= 32
 
-    def _check_psram_transfer_speed(self):
+    def color_mode_default(self):
         """
-        Checks whether the PSRAM transfer speed is sufficient for specified
-        resolution and color mode.
+        Returns the default color mode for the display.
+        """
+        return colors.COLOR_MODE_BGR565
 
+    def color_mode_is_supported(self, color_mode):
+        """
+        Checks if the given color mode is supported by the display.
+
+        Args:
+            color_mode (int): Color mode to check
         Returns:
-            bool: True if PSRAM speed is sufficient, False otherwise.
+            bool: True if the color mode is supported, otherwise False
         """
-        # The RP2350 system clock is typically 150 MHz, and the HSTX transmits 1
-        # pixel every 5 clock cycles, so 30 megapixels per second. The QSPI bus
-        # clock is typically half the system clock (150 MHz / 2 = 75 MHz), and 1
-        # byte per 2 clock cycles (quad-SPI), so 37.5 Mbytes/second. So for
-        # native resolution (no scaling), only color modes with 1 byte per pixel
-        # are possible (eg. BGR233 or GRAY8). Larger color modes (2 or 4 bytes
-        # per pixel) can only be used with scaling.
-
-        # PSRAM timing register parameters.
-        XIP_QMI_BASE = 0x400D0000
-        M1_TIMING = XIP_QMI_BASE + 0x20
-        CLKDIV_MASK = 0xFF
-
-        # Get PSRAM clock divider, typically 2.
-        psram_clk_div = machine.mem32[M1_TIMING] & CLKDIV_MASK
-
-        # Compute PSRAM pixel transfer rate. PSRAM is on the QSPI bus, which
-        # transfers 1 byte every 2 clock cycles.
-        psram_clock_hz = machine.freq() / psram_clk_div # Typically 75 MHz
-        psram_bytes_per_second = psram_clock_hz / 2 # Typically 37.5 MBps
-        psram_pixels_per_second = psram_bytes_per_second * self._width_scale / self._bytes_per_pixel
-
-        # The HSTX configuration sends 1 pixel every 5 system clock cycles,
-        # ignoring sync/porch timing signals.
-        hstx_pixels_per_second = machine.freq() / 5
-
-        # Probing with an oscilloscope has shown that the XIP stream typically
-        # performs transfers in 32 bit bursts every 19 system clock cycles
-        # (~127ns) instead of the nominal 16 system clock cycles (~107ns). This
-        # could be relevant if the PSRAM and HSTX speeds are close, so we'll
-        # include it as a safety margin.
-        psram_pixels_per_second *= 16 / 19
-
-        # Return whether PSRAM transfer speed is sufficient.
-        return psram_pixels_per_second > hstx_pixels_per_second
+        return color_mode == colors.COLOR_MODE_BGR565
 
     def _configure_hstx(self):
         """
@@ -306,7 +236,7 @@ class DVI_HSTX(CV2_Display):
         # FIFO is one complete timing symbol, so `raw_n_shifts` and `raw_shift`
         # are set to 1 and 0, respectively.
         expand_shift = self._hstx.pack_expand_shift(
-            enc_n_shifts = self._width_scale,
+            enc_n_shifts = self._width_scale % 32,
             enc_shift = 0,
             raw_n_shifts = 1,
             raw_shift = 0
@@ -331,7 +261,7 @@ class DVI_HSTX(CV2_Display):
         # With BGR color modes, B is the least significant bits, and R is the
         # most significant bits. This means the bits are in RGB order, which is
         # opposite of what one might expect.
-        if self._color_mode == self.COLOR_BGR233:
+        if self._color_mode == colors.COLOR_MODE_BGR233:
             # BGR233 (00000000 00000000 00000000 RRRGGGBB)
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  2, # 3 bits (red)
@@ -341,7 +271,7 @@ class DVI_HSTX(CV2_Display):
                 l0_nbits =  1, # 2 bits (blue)
                 l0_rot   = 26, # Shift right 26 bits to align MSB (left 6 bits)
             )
-        elif self._color_mode == self.COLOR_GRAY8:
+        elif self._color_mode == colors.COLOR_MODE_GRAY8:
             # GRAY8 (00000000 00000000 00000000 GGGGGGGG)
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  7, # 8 bits (red)
@@ -351,7 +281,7 @@ class DVI_HSTX(CV2_Display):
                 l0_nbits =  7, # 8 bits (blue)
                 l0_rot   =  0, # Shift right  0 bits to align MSB
             )
-        elif self._color_mode == self.COLOR_BGR565:
+        elif self._color_mode == colors.COLOR_MODE_BGR565:
             # BGR565 (00000000 00000000 RRRRRGGG GGGBBBBB)
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  4, # 5 bits (red)
@@ -361,7 +291,7 @@ class DVI_HSTX(CV2_Display):
                 l0_nbits =  4, # 5 bits (blue)
                 l0_rot   = 29, # Shift right 29 bits to align MSB (left 3 bits)
             )
-        elif self._color_mode == self.COLOR_BGRA8888:
+        elif self._color_mode == colors.COLOR_MODE_BGRA8888:
             # BGRA8888 (AAAAAAAA RRRRRRRR GGGGGGGG BBBBBBBB) alpha is ignored
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  7, # 8 bits (red)
@@ -596,7 +526,7 @@ class DVI_HSTX(CV2_Display):
         self._dma_executer = rp2.DMA()
 
         # Check if the display buffer is in PSRAM.
-        self._buffer_is_in_psram = not self._is_in_sram(addressof(self._buffer))
+        self._buffer_is_in_psram = memory.is_in_external_ram(self._buffer)
 
         # If the buffer is in PSRAM, create the streamer DMA channel and row
         # buffer in SRAM.
@@ -605,8 +535,18 @@ class DVI_HSTX(CV2_Display):
             self._dma_streamer = rp2.DMA()
 
             # Verify that PSRAM transfer speed is sufficient for specified
-            # resolution and color mode.
-            if not self._check_psram_transfer_speed():
+            # resolution and color mode. The RP2350 system clock is typically
+            # 150 MHz, and the HSTX transmits 1 pixel every 5 clock cycles, so
+            # 30 megapixels per second. The QSPI bus clock is typically half the
+            # system clock (150 MHz / 2 = 75 MHz), and 1 byte per 2 clock cycles
+            # (quad-SPI), so 37.5 Mbytes/second. So for native resolution (no
+            # scaling), only color modes with 1 byte per pixel are possible (eg.
+            # BGR233 or GRAY8). Larger color modes (2 or 4 bytes per pixel) can
+            # only be used with scaling.
+            hstx_pixels_per_second = machine.freq() / 5
+            psram_bytes_per_second = memory.external_ram_max_bytes_per_second()
+            psram_pixels_per_second = psram_bytes_per_second * self._width_scale / self._bytes_per_pixel
+            if psram_pixels_per_second < hstx_pixels_per_second:
                 raise ValueError("PSRAM transfer speed too low for specified resolution and color mode")
 
             # Create the row buffer.
@@ -615,7 +555,7 @@ class DVI_HSTX(CV2_Display):
 
             # Verify row buffer is in SRAM. If not, we'll still have the same
             # latency problem.
-            if not self._is_in_sram(addressof(self._row_buffer)):
+            if memory.is_in_external_ram(self._row_buffer):
                 raise MemoryError("not enough space in SRAM for row buffer")
 
             # We'll use a DMA to trigger the XIP stream. However the RP2350's
@@ -785,7 +725,7 @@ class DVI_HSTX(CV2_Display):
 
         # The control block array must be in SRAM, otherwise we run into the
         # same latency problem with DMA transfers from PSRAM.
-        if not self._is_in_sram(addressof(self._control_blocks)):
+        if memory.is_in_external_ram(self._control_blocks):
             raise MemoryError("not enough space in SRAM for control block array")
 
         # Create the HSTX command sequences so the control blocks can reference

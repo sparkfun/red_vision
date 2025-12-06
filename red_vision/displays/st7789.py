@@ -3,9 +3,9 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# st7789.py
+# red_vision/displays/st7789.py
 #
-# Base class for OpenCV ST7789 display drivers.
+# Red Vision ST7789 display driver.
 # 
 # This class is derived from:
 # https://github.com/easytarget/st7789-framebuffer/blob/main/st7789_purefb.py
@@ -16,13 +16,14 @@
 # Copyright (c) 2019 Ivan Belokobylskiy
 #-------------------------------------------------------------------------------
 
-from .cv2_display import CV2_Display
 from time import sleep_ms
 import struct
+from ..utils import colors
+from .video_display_driver import VideoDisplayDriver
 
-class ST7789(CV2_Display):
+class ST7789(VideoDisplayDriver):
     """
-    Base class for OpenCV ST7789 display drivers.
+    Red Vision ST7789 display driver.
     """
     # ST7789 commands
     _ST7789_SWRESET = b"\x01"
@@ -119,11 +120,12 @@ class ST7789(CV2_Display):
 
     def __init__(
         self,
-        width,
-        height,
-        rotation=0,
-        bgr_order=True,
-        reverse_bytes_in_word=True,
+        interface,
+        height = None,
+        width = None,
+        color_mode = None,
+        buffer = None,
+        rotation = 1,
     ):
         """
         Initializes the ST7789 display driver.
@@ -142,9 +144,20 @@ class ST7789(CV2_Display):
             reverse_bytes_in_word (bool, optional):
               - Enable if the display uses LSB byte order for color words
         """
+        self._interface = interface
+        super().__init__(height, width, color_mode, buffer)
+
+        # Initial rotation
+        self._rotation = rotation % 4
+
+        self._interface.begin()
         # Initial dimensions and offsets; will be overridden when rotation applied
-        self._width = width
-        self._height = height
+        if self._rotation % 2 == 0:
+            width = self._width
+            height = self._height
+        else:
+            width = self._height
+            height = self._width
         self._xstart = 0
         self._ystart = 0
         # Check display is known and get rotation table
@@ -154,20 +167,62 @@ class ST7789(CV2_Display):
                 [f"{display[0]}x{display[1]}" for display in self._SUPPORTED_DISPLAYS])
             raise ValueError(
                 f"Unsupported {width}x{height} display. Supported displays: {supported_displays}")
-        # Colors
-        self._bgr_order = bgr_order
-        self._needs_swap = reverse_bytes_in_word
         # Reset the display
         self._soft_reset()
         # Yes, send init twice, once is not always enough
         self._send_init(self._ST7789_INIT_CMDS)
         self._send_init(self._ST7789_INIT_CMDS)
-        # Initial rotation
-        self._rotation = rotation % 4
         # Apply rotation
         self._set_rotation(self._rotation)
-        # Create the framebuffer for the correct rotation
-        super().__init__((self._height, self._width, 2))
+
+    def resolution_default(self):
+        """
+        Returns the default resolution for the display.
+
+        Returns:
+            tuple: (height, width) in pixels
+        """
+        # Use the first supported display as the default
+        display = self._SUPPORTED_DISPLAYS[0]
+        return (display[0], display[1])
+
+    def resolution_is_supported(self, height, width):
+        """
+        Checks if the given resolution is supported by the display.
+
+        Args:
+            height (int): Height in pixels
+            width (int): Width in pixels
+        Returns:
+            bool: True if the resolution is supported, otherwise False
+        """
+        return any(display[0] == height and display[1] == width for display in self._SUPPORTED_DISPLAYS)
+
+    def color_mode_default(self):
+        """
+        Returns the default color mode for the display.
+        """
+        return colors.COLOR_MODE_BGR565
+
+    def color_mode_is_supported(self, color_mode):
+        """
+        Checks if the given color mode is supported by the display.
+
+        Args:
+            color_mode (int): Color mode to check
+        Returns:
+            bool: True if the color mode is supported, otherwise False
+        """
+        return color_mode == colors.COLOR_MODE_BGR565
+
+    def show(self):
+        """
+        Updates the display with the contents of the framebuffer.
+        """
+        # When sending BGR565 pixel data, the ST7789 expects each pair of bytes
+        # to be sent in the opposite endianness of what the SPI peripheral would
+        # normally send. So we just swap each pair of bytes.
+        self._interface.write(None, self._buffer[:,:,::-1])
 
     def _send_init(self, commands):
         """
@@ -177,14 +232,14 @@ class ST7789(CV2_Display):
             commands (list): List of tuples (command, data, delay_ms)
         """
         for command, data, delay_ms in commands:
-            self._write(command, data)
+            self._interface.write(command, data)
             sleep_ms(delay_ms)
 
     def _soft_reset(self):
         """
         Sends a software reset command to the display.
         """
-        self._write(self._ST7789_SWRESET)
+        self._interface.write(self._ST7789_SWRESET)
         sleep_ms(150)
 
     def _find_rotations(self, width, height):
@@ -226,47 +281,14 @@ class ST7789(CV2_Display):
             self._height,
             self._xstart,
             self._ystart, ) = self._rotations[rotation]
-        if self._bgr_order:
-            madctl |= self._ST7789_MADCTL_BGR
-        else:
-            madctl &= ~self._ST7789_MADCTL_BGR
-        self._write(self._ST7789_MADCTL, bytes([madctl]))
+        # Always BGR order for OpenCV
+        madctl |= self._ST7789_MADCTL_BGR
+        self._interface.write(self._ST7789_MADCTL, bytes([madctl]))
         # Set window for writing into
-        self._write(self._ST7789_CASET,
+        self._interface.write(self._ST7789_CASET,
             struct.pack(self._ENCODE_POS, self._xstart, self._width + self._xstart - 1))
-        self._write(self._ST7789_RASET,
+        self._interface.write(self._ST7789_RASET,
             struct.pack(self._ENCODE_POS, self._ystart, self._height + self._ystart - 1))
-        self._write(self._ST7789_RAMWR)
+        self._interface.write(self._ST7789_RAMWR)
         # TODO: Can we swap (modify) framebuffer width/height in the super() class?
         self._rotation = rotation
-
-    def imshow(self, image):
-        """
-        Shows a NumPy image on the display.
-
-        Args:
-            image (ndarray): Image to show
-        """
-        # Get the common ROI between the image and internal display buffer
-        image_roi, buffer_roi = self._get_common_roi_with_buffer(image)
-
-        # Ensure the image is in uint8 format
-        image_roi = self._convert_to_uint8(image_roi)
-
-        # Convert the image to BGR565 format and write it to the buffer
-        self._convert_to_bgr565(image_roi, buffer_roi)
-
-        # Write buffer to display. Swap bytes if needed
-        if self._needs_swap:
-            self._write(None, self._buffer[:, :, ::-1])
-        else:
-            self._write(None, self._buffer)
-
-    def clear(self):
-        """
-        Clears the display by filling it with black color.
-        """
-        # Clear the buffer by filling it with zeros (black)
-        self._buffer[:] = 0
-        # Write the buffer to the display
-        self._write(None, self._buffer)

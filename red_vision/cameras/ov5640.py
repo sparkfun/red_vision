@@ -3,9 +3,9 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ov5640.py
+# red_vision/cameras/ov5640.py
 #
-# Base class for OpenCV OV5640 camera drivers.
+# Red Vision OV5640 camera driver.
 # 
 # This class is derived from:
 # https://github.com/adafruit/Adafruit_CircuitPython_OV5640
@@ -15,11 +15,11 @@
 
 from .dvp_camera import DVP_Camera
 from time import sleep_us
-import cv2
+from ..utils import colors
 
 class OV5640(DVP_Camera):
     """
-    Base class for OpenCV OV5640 camera drivers.
+    Red Vision OV5640 camera driver.
     """
     _OV5640_COLOR_RGB = 0
     _OV5640_COLOR_YUV = 1
@@ -888,8 +888,14 @@ class OV5640(DVP_Camera):
 
     def __init__(
         self,
+        interface,
         i2c,
-        i2c_address = 0x3C
+        i2c_address = 0x3C,
+        continuous = False,
+        height = None,
+        width = None,
+        color_mode = None,
+        buffer = None,
     ):
         """
         Initializes the OV5640 camera sensor with default settings.
@@ -898,7 +904,17 @@ class OV5640(DVP_Camera):
             i2c (I2C): I2C object for communication
             i2c_address (int, optional): I2C address (default: 0x3C)
         """
-        super().__init__(i2c, i2c_address)
+        self._interface = interface
+        self._continuous = continuous
+        super().__init__(i2c, i2c_address, height, width, color_mode, buffer)
+
+        self._interface.begin(
+            self._buffer,
+            xclk_freq = 20_000_000,
+            num_data_pins = 8,
+            byte_swap = False,
+            continuous = self._continuous,
+        )
 
         self._write_list(self._sensor_default_regs)
 
@@ -915,7 +931,70 @@ class OV5640(DVP_Camera):
         self._white_balance = 0
 
         self._set_size_and_colorspace()
-    
+
+    def resolution_default(self):
+        """
+        Returns the default resolution of the camera.
+
+        Returns:
+            tuple: (height, width) in pixels
+        """
+        return (240, 320)
+
+    def resolution_is_supported(self, height, width):
+        """
+        Checks if the specified resolution is supported by the camera.
+
+        Args:
+            height (int): Image height in pixels
+            width (int): Image width in pixels
+        Returns:
+            bool: True if the resolution is supported, otherwise False
+        """
+        return (height, width) == (240, 320)
+
+    def color_mode_default(self):
+        """
+        Returns the default color mode of the camera.
+
+        Returns:
+            int: Color mode constant
+        """
+        return colors.COLOR_MODE_BGR565
+
+    def color_mode_is_supported(self, color_mode):
+        """
+        Checks if the specified color mode is supported by the camera.
+
+        Args:
+            color_mode (int): Color mode constant
+        Returns:
+            bool: True if the color mode is supported, otherwise False
+        """
+        return color_mode == colors.COLOR_MODE_BGR565
+
+    def open(self):
+        """
+        Opens the camera and prepares it for capturing images.
+        """
+        pass
+
+    def release(self):
+        """
+        Releases the camera and frees any resources.
+        """
+        pass
+
+    def grab(self):
+        """
+        Grabs a single frame from the camera.
+
+        Returns:
+            bool: True if the frame was grabbed successfully, otherwise False
+        """
+        self._interface._capture()
+        return True
+
     def _is_connected(self):
         """
         Checks if the camera is connected by reading the chip ID.
@@ -1167,25 +1246,3 @@ class OV5640(DVP_Camera):
         else:
             val &= ~mask
         self._write_register(reg, val)
-
-    def read(self, image = None):
-        """
-        Reads an image from the camera.
-
-        Args:
-            image (ndarray, optional): Image to read into
-
-        Returns:
-            tuple: (success, image)
-                - success (bool): True if the image was read, otherwise False
-                - image (ndarray): The captured image, or None if reading failed
-        """
-        self._capture()
-        if self._colorspace == self._OV5640_COLOR_RGB:
-            return (True, cv2.cvtColor(self._buffer, cv2.COLOR_BGR5652BGR, image))
-        elif self._colorspace == self._OV5640_COLOR_GRAYSCALE:
-            return (True, cv2.cvtColor(self._buffer, cv2.COLOR_GRAY2BGR, image))
-        else:
-            NotImplementedError(
-                f"OV5640: Reading images in colorspace {self._colorspace} is not yet implemented."
-            )

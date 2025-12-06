@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex01_touch_screen_drive.py
+# red_vision_examples/xrp_examples/ex01_touch_screen_drive.py
 # 
 # This example creates a simple touch screen interface to drive the XRP robot.
 # It creates arrow buttons to drive around, and a stop button to exit the
