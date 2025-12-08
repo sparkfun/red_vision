@@ -83,9 +83,20 @@ class DVP_RP2_PIO():
             self._xclk.freq(xclk_freq)
             self._xclk.duty_u16(32768) # 50% duty cycle
 
+        # If there's only 1 byte per pixel, we can safely transfer multiple
+        # pixels at a time without worrying about byte alignment. So we use the
+        # maximum of 4 pixels per transfer to improve DMA efficiency.
+        if self._bytes_per_pixel == 1:
+            self._bytes_per_transfer = 4
+            # The PIO left shifts the pixel data in the FIFO buffer, so we need
+            # to swap the bytes to get the correct order.
+            byte_swap = True
+        else:
+            self._bytes_per_transfer = self._bytes_per_pixel
+
         # Store transfer parameters
         self._byte_swap = byte_swap
-        
+
         # Whether to continuously capture frames
         self._continuous = continuous
 
@@ -121,7 +132,7 @@ class DVP_RP2_PIO():
             self._sm_id,
             program,
             in_base = self._pin_d0,
-            push_thresh = self._bytes_per_pixel * 8
+            push_thresh = self._bytes_per_transfer * 8
         )
 
     # Here is the PIO program, which is configurable to mask in the GPIO pins
@@ -301,7 +312,7 @@ class DVP_RP2_PIO():
         # needed. Once done, it chains back to the dispatcher to get the next
         # control block.
         self._dma_ctrl_pio_repeat = self._dma_executer.pack_ctrl(
-            size        = {1:0, 2:1, 4:2}[self._bytes_per_pixel],
+            size        = {1:0, 2:1, 4:2}[self._bytes_per_transfer],
             inc_read    = False,
             inc_write   = True,
             # ring_size = 0,
@@ -427,7 +438,7 @@ class DVP_RP2_PIO():
             self._cb_pio_repeat = array.array('I', [
                 pio_rx_fifo_addr, # READ_ADDR
                 addressof(self._row_buffer), # WRITE_ADDR
-                self._bytes_per_row // self._bytes_per_pixel, # TRANS_COUNT
+                self._bytes_per_row // self._bytes_per_transfer, # TRANS_COUNT
                 self._dma_ctrl_pio_repeat, # CTRL_TRIG
             ])
 
