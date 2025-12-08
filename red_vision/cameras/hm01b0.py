@@ -238,6 +238,7 @@ class HM01B0(DVP_Camera):
         i2c,
         i2c_address = 0x24,
         num_data_pins = 1,
+        xclk_freq = 25_000_000,
         continuous = False,
         height = None,
         width = None,
@@ -262,7 +263,7 @@ class HM01B0(DVP_Camera):
 
         self._interface.begin(
             self._buffer,
-            xclk_freq = 25_000_000,
+            xclk_freq = xclk_freq,
             num_data_pins = self._num_data_pins,
             byte_swap = False,
             continuous = self._continuous,
@@ -416,3 +417,27 @@ class HM01B0(DVP_Camera):
                     value = 0x02
             self._write_register(reg, value)
             sleep_us(1000)
+        
+        # When using only 1 data pin, the HM01B0 sets the PCLK to the same
+        # frequency as the XCLK, which is typically 24MHz. Because of the high
+        # frequency, the signal integrity can be more easily compromised. This
+        # is especially true with the SparkFun IoT RedBoard - RP2350, where the
+        # D0 pin also goes to the HSTX connector; if an HDMI cable is plugged
+        # in, it adds a lot of capacitance to the D0 pin. To help with signal
+        # integrity, we can increase the pin drive strength when using 1 data
+        # pin. (When 8 data pins are used, PCLK is typically 8x lower frequency
+        # than XCLK, so signal integrity is much less of a concern.)
+        if num_data_pins == 1:
+            # Page 42 of the HM01B0 datasheet:
+            # https://www.uctronics.com/download/Datasheet/HM01B0-MWA-image-sensor-datasheet.pdf
+            # 0x3062 (IO_DRIVE_STR): IO drive strength control
+            # [3:0] : PCLKO
+            # [7:4] : D[0]
+            # 
+            # Testing with a RedBoard - RP2350 has shown that setting the D[0]
+            # drive strength to 3 is sufficient to result in a clean eye pattern
+            # on an oscilloscope when an HDMI cable is connected. It's also
+            # beneficial to increase the PCLKO drive strength to create a more
+            # square wave. Both can be increased to 0xF for a cleaner signal,
+            # but this increases power consumption and likely creates more EMI.
+            self._write_register(self._IO_DRIVE_STR, 0x33)
