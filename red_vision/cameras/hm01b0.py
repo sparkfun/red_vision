@@ -436,8 +436,14 @@ class HM01B0(DVP_Camera):
             # 
             # Testing with a RedBoard - RP2350 has shown that setting the D[0]
             # drive strength to 3 is sufficient to result in a clean eye pattern
-            # on an oscilloscope when an HDMI cable is connected. It's also
-            # beneficial to increase the PCLKO drive strength to create a more
-            # square wave. Both can be increased to 0xF for a cleaner signal,
-            # but this increases power consumption and likely creates more EMI.
-            self._write_register(self._IO_DRIVE_STR, 0x33)
+            # on an oscilloscope when an HDMI cable is connected. Increasing the
+            # PCLKO drive strength also make a cleaner square wave according to
+            # the oscilloscope. However, when the scope probe is disconnected,
+            # the image can become corrupted. The root problem is not known, but
+            # it's possible that the increased drive strength is causing
+            # oscillations on the PCLK line when there is no load from the scope
+            # probe. Additionally, increasing the drive strength increases
+            # power consumption and likely creates more EMI, so a balance seems
+            # to be needed. More testing may be needed to find optimal values,
+            # or make these configurable by the user.
+            self._write_register(self._IO_DRIVE_STR, 0x30)
