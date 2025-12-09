@@ -417,7 +417,7 @@ class OV5640(DVP_Camera):
         # io direction
         0x3017, 0xFF,
         0x3018, 0xFF,
-        _DRIVE_CAPABILITY, 0x43, # 2x drive strength
+        _DRIVE_CAPABILITY, 0x02, # 1x drive strength
         _CLOCK_POL_CONTROL, 0x21,
         0x4713, 0x02,  # jpg mode select
         _ISP_CONTROL_01, 0x83,  # turn color matrix, awb and SDE
