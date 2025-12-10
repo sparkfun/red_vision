@@ -78,7 +78,7 @@ class VideoDriver():
         """
         return self._color_mode
 
-    def resolution_default():
+    def resolution_default(self):
         """
         Returns the default resolution of the camera.
 
@@ -87,7 +87,7 @@ class VideoDriver():
         """
         raise NotImplementedError("Subclass must implement this method")
 
-    def resolution_is_supported():
+    def resolution_is_supported(self, height, width):
         """
         Returns whether the given resolution is supported by the camera.
 
@@ -99,7 +99,7 @@ class VideoDriver():
         """
         raise NotImplementedError("Subclass must implement this method")
 
-    def color_mode_default():
+    def color_mode_default(self):
         """
         Returns the default color mode of the camera.
 
@@ -108,7 +108,7 @@ class VideoDriver():
         """
         raise NotImplementedError("Subclass must implement this method")
 
-    def color_mode_is_supported():
+    def color_mode_is_supported(self, color_mode):
         """
         Returns the default resolution of the camera.
 
