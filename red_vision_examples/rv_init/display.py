@@ -53,7 +53,7 @@ driver = rv.displays.ST7789(
     interface = interface,
 
     # Optionally specify the rotation of the display.
-    # rotation = 1,
+    # rotation = rv.displays.ST7789.ROTATION_LANDSCAPE,
 
     # Optionally specify the image resolution.
     # height = 240,

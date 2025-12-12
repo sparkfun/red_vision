@@ -54,6 +54,12 @@ class ST7789(VideoDisplayDriver):
 
     _ENCODE_POS = ">HH"
 
+    # Rotation indices
+    ROTATION_PORTRAIT = 0
+    ROTATION_LANDSCAPE = 1
+    ROTATION_PORTRAIT_INVERTED = 2
+    ROTATION_LANDSCAPE_INVERTED = 3
+
     # Rotation tables
     #   (madctl, width, height, xstart, ystart)[rotation % 4]
 
@@ -125,7 +131,7 @@ class ST7789(VideoDisplayDriver):
         width = None,
         color_mode = None,
         buffer = None,
-        rotation = 1,
+        rotation = ROTATION_LANDSCAPE,
     ):
         """
         Initializes the ST7789 display driver.
