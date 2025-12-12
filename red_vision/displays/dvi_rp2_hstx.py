@@ -20,8 +20,8 @@ import machine
 import array
 from uctypes import addressof
 from ulab import numpy as np
-from ..utils import colors
-from ..utils import memory
+from ..utils import colors as rv_colors
+from ..utils import memory as rv_memory
 
 class DVI_RP2_HSTX():
     """
@@ -200,7 +200,7 @@ class DVI_RP2_HSTX():
         """
         Returns the default color mode for the display.
         """
-        return colors.COLOR_MODE_BGR565
+        return rv_colors.COLOR_MODE_BGR565
 
     def color_mode_is_supported(self, color_mode):
         """
@@ -211,7 +211,7 @@ class DVI_RP2_HSTX():
         Returns:
             bool: True if the color mode is supported, otherwise False
         """
-        return color_mode == colors.COLOR_MODE_BGR565
+        return color_mode == rv_colors.COLOR_MODE_BGR565
 
     def _configure_hstx(self):
         """
@@ -261,7 +261,7 @@ class DVI_RP2_HSTX():
         # With BGR color modes, B is the least significant bits, and R is the
         # most significant bits. This means the bits are in RGB order, which is
         # opposite of what one might expect.
-        if self._color_mode == colors.COLOR_MODE_BGR233:
+        if self._color_mode == rv_colors.COLOR_MODE_BGR233:
             # BGR233 (00000000 00000000 00000000 RRRGGGBB)
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  2, # 3 bits (red)
@@ -271,7 +271,7 @@ class DVI_RP2_HSTX():
                 l0_nbits =  1, # 2 bits (blue)
                 l0_rot   = 26, # Shift right 26 bits to align MSB (left 6 bits)
             )
-        elif self._color_mode == colors.COLOR_MODE_GRAY8:
+        elif self._color_mode == rv_colors.COLOR_MODE_GRAY8:
             # GRAY8 (00000000 00000000 00000000 GGGGGGGG)
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  7, # 8 bits (red)
@@ -281,7 +281,7 @@ class DVI_RP2_HSTX():
                 l0_nbits =  7, # 8 bits (blue)
                 l0_rot   =  0, # Shift right  0 bits to align MSB
             )
-        elif self._color_mode == colors.COLOR_MODE_BGR565:
+        elif self._color_mode == rv_colors.COLOR_MODE_BGR565:
             # BGR565 (00000000 00000000 RRRRRGGG GGGBBBBB)
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  4, # 5 bits (red)
@@ -291,7 +291,7 @@ class DVI_RP2_HSTX():
                 l0_nbits =  4, # 5 bits (blue)
                 l0_rot   = 29, # Shift right 29 bits to align MSB (left 3 bits)
             )
-        elif self._color_mode == colors.COLOR_MODE_BGRA8888:
+        elif self._color_mode == rv_colors.COLOR_MODE_BGRA8888:
             # BGRA8888 (AAAAAAAA RRRRRRRR GGGGGGGG BBBBBBBB) alpha is ignored
             expand_tmds = self._hstx.pack_expand_tmds(
                 l2_nbits =  7, # 8 bits (red)
@@ -526,7 +526,7 @@ class DVI_RP2_HSTX():
         self._dma_executer = rp2.DMA()
 
         # Check if the display buffer is in PSRAM.
-        self._buffer_is_in_psram = memory.is_in_external_ram(self._buffer)
+        self._buffer_is_in_psram = rv_memory.is_in_external_ram(self._buffer)
 
         # If the buffer is in PSRAM, create the streamer DMA channel and row
         # buffer in SRAM.
@@ -544,7 +544,7 @@ class DVI_RP2_HSTX():
             # BGR233 or GRAY8). Larger color modes (2 or 4 bytes per pixel) can
             # only be used with scaling.
             hstx_pixels_per_second = machine.freq() / 5
-            psram_bytes_per_second = memory.external_ram_max_bytes_per_second()
+            psram_bytes_per_second = rv_memory.external_ram_max_bytes_per_second()
             psram_pixels_per_second = psram_bytes_per_second * self._width_scale / self._bytes_per_pixel
             if psram_pixels_per_second < hstx_pixels_per_second:
                 raise ValueError("PSRAM transfer speed too low for specified resolution and color mode")
@@ -555,7 +555,7 @@ class DVI_RP2_HSTX():
 
             # Verify row buffer is in SRAM. If not, we'll still have the same
             # latency problem.
-            if memory.is_in_external_ram(self._row_buffer):
+            if rv_memory.is_in_external_ram(self._row_buffer):
                 raise MemoryError("not enough space in SRAM for row buffer")
 
             # We'll use a DMA to trigger the XIP stream. However the RP2350's
@@ -725,7 +725,7 @@ class DVI_RP2_HSTX():
 
         # The control block array must be in SRAM, otherwise we run into the
         # same latency problem with DMA transfers from PSRAM.
-        if memory.is_in_external_ram(self._control_blocks):
+        if rv_memory.is_in_external_ram(self._control_blocks):
             raise MemoryError("not enough space in SRAM for control block array")
 
         # Create the HSTX command sequences so the control blocks can reference

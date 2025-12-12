@@ -18,7 +18,7 @@ import rp2
 import array
 from machine import Pin, PWM
 from uctypes import addressof
-from ..utils import memory
+from ..utils import memory as rv_memory
 
 class DVP_RP2_PIO():
     """
@@ -247,7 +247,7 @@ class DVP_RP2_PIO():
         self._dma_executer = rp2.DMA()
 
         # Check if the display buffer is in PSRAM.
-        self._buffer_is_in_psram = memory.is_in_external_ram(self._buffer)
+        self._buffer_is_in_psram = rv_memory.is_in_external_ram(self._buffer)
 
         # If the buffer is in PSRAM, create the streamer DMA channel and row
         # buffer in SRAM.
@@ -261,7 +261,7 @@ class DVP_RP2_PIO():
 
             # Verify row buffer is in SRAM. If not, we'll still have the same
             # latency problem.
-            if memory.is_in_external_ram(self._row_buffer):
+            if rv_memory.is_in_external_ram(self._row_buffer):
                 raise MemoryError("not enough space in SRAM for row buffer")
 
         # Create DMA control register values.

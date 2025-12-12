@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import cv2
-from ..utils import colors
+from ..utils import colors as rv_colors
 
 class VideoCapture():
     """
@@ -61,9 +61,9 @@ class VideoCapture():
         """
         color_mode = self._driver.color_mode()
         buffer = self._driver.buffer()
-        if (color_mode == colors.COLOR_MODE_BGR888 or
-                color_mode == colors.COLOR_MODE_GRAY8 or
-                color_mode == colors.COLOR_MODE_BGR233): # No conversion available
+        if (color_mode == rv_colors.COLOR_MODE_BGR888 or
+                color_mode == rv_colors.COLOR_MODE_GRAY8 or
+                color_mode == rv_colors.COLOR_MODE_BGR233): # No conversion available
             # These color modes are copied directly with no conversion.
             if image is not None:
                 # Copy buffer to provided image.
@@ -72,17 +72,17 @@ class VideoCapture():
             else:
                 # Return a copy of the buffer.
                 return (True, buffer.copy())
-        elif color_mode == colors.COLOR_MODE_BAYER_BG:
+        elif color_mode == rv_colors.COLOR_MODE_BAYER_BG:
             return (True, cv2.cvtColor(buffer, cv2.COLOR_BayerBG2BGR, image))
-        elif color_mode == colors.COLOR_MODE_BAYER_GB:
+        elif color_mode == rv_colors.COLOR_MODE_BAYER_GB:
             return (True, cv2.cvtColor(buffer, cv2.COLOR_BayerGB2BGR, image))
-        elif color_mode == colors.COLOR_MODE_BAYER_RG:
+        elif color_mode == rv_colors.COLOR_MODE_BAYER_RG:
             return (True, cv2.cvtColor(buffer, cv2.COLOR_BayerRG2BGR, image))
-        elif color_mode == colors.COLOR_MODE_BAYER_GR:
+        elif color_mode == rv_colors.COLOR_MODE_BAYER_GR:
             return (True, cv2.cvtColor(buffer, cv2.COLOR_BayerGR2BGR, image))
-        elif color_mode == colors.COLOR_MODE_BGR565:
+        elif color_mode == rv_colors.COLOR_MODE_BGR565:
             return (True, cv2.cvtColor(buffer, cv2.COLOR_BGR5652BGR, image))
-        elif color_mode == colors.COLOR_MODE_BGRA8888:
+        elif color_mode == rv_colors.COLOR_MODE_BGRA8888:
             return (True, cv2.cvtColor(buffer, cv2.COLOR_BGRA2BGR, image))
         else:
             NotImplementedError("Unsupported color mode")

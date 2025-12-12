@@ -11,7 +11,7 @@
 
 import cv2 as cv
 from ulab import numpy as np
-from ..utils import colors
+from ..utils import colors as rv_colors
 
 class VideoDisplay():
     """
@@ -46,19 +46,19 @@ class VideoDisplay():
 
         # Convert the image to current format and write it to the buffer.
         color_mode = self._driver.color_mode()
-        if (color_mode == colors.COLOR_MODE_GRAY8 or
+        if (color_mode == rv_colors.COLOR_MODE_GRAY8 or
                 # No conversion available for the modes below, treat as GRAY8
-                color_mode == colors.COLOR_MODE_BAYER_BG or
-                color_mode == colors.COLOR_MODE_BAYER_GB or
-                color_mode == colors.COLOR_MODE_BAYER_RG or
-                color_mode == colors.COLOR_MODE_BAYER_GR or
-                color_mode == colors.COLOR_MODE_BGR233):
+                color_mode == rv_colors.COLOR_MODE_BAYER_BG or
+                color_mode == rv_colors.COLOR_MODE_BAYER_GB or
+                color_mode == rv_colors.COLOR_MODE_BAYER_RG or
+                color_mode == rv_colors.COLOR_MODE_BAYER_GR or
+                color_mode == rv_colors.COLOR_MODE_BGR233):
             self._convert_to_gray8(image_roi, buffer_roi)
-        elif color_mode == colors.COLOR_MODE_BGR565:
+        elif color_mode == rv_colors.COLOR_MODE_BGR565:
             self._convert_to_bgr565(image_roi, buffer_roi)
-        elif color_mode == colors.COLOR_MODE_BGR888:
+        elif color_mode == rv_colors.COLOR_MODE_BGR888:
             self._convert_to_bgr888(image_roi, buffer_roi)
-        elif color_mode == colors.COLOR_MODE_BGRA8888:
+        elif color_mode == rv_colors.COLOR_MODE_BGRA8888:
             self._convert_to_bgra8888(image_roi, buffer_roi)
         else:
             raise ValueError("Unsupported color mode")

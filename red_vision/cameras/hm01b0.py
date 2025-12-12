@@ -15,7 +15,7 @@
 
 from .dvp_camera import DVP_Camera
 from time import sleep_us
-from ..utils import colors
+from ..utils import colors as rv_colors
 
 class HM01B0(DVP_Camera):
     """
@@ -300,7 +300,7 @@ class HM01B0(DVP_Camera):
         Returns:
             int: Color mode constant
         """
-        return colors.COLOR_MODE_BAYER_RG
+        return rv_colors.COLOR_MODE_BAYER_RG
 
     def color_mode_is_supported(self, color_mode):
         """
@@ -311,7 +311,7 @@ class HM01B0(DVP_Camera):
         Returns:
             bool: True if the color mode is supported, otherwise False
         """
-        return color_mode == colors.COLOR_MODE_BAYER_RG
+        return color_mode == rv_colors.COLOR_MODE_BAYER_RG
 
     def open(self):
         """

@@ -15,7 +15,7 @@
 
 from .dvp_camera import DVP_Camera
 from time import sleep_us
-from ..utils import colors
+from ..utils import colors as rv_colors
 
 class OV5640(DVP_Camera):
     """
@@ -960,7 +960,7 @@ class OV5640(DVP_Camera):
         Returns:
             int: Color mode constant
         """
-        return colors.COLOR_MODE_BGR565
+        return rv_colors.COLOR_MODE_BGR565
 
     def color_mode_is_supported(self, color_mode):
         """
@@ -971,7 +971,7 @@ class OV5640(DVP_Camera):
         Returns:
             bool: True if the color mode is supported, otherwise False
         """
-        return color_mode == colors.COLOR_MODE_BGR565
+        return color_mode == rv_colors.COLOR_MODE_BGR565
 
     def open(self):
         """

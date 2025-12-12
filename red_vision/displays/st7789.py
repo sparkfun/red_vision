@@ -18,7 +18,7 @@
 
 from time import sleep_ms
 import struct
-from ..utils import colors
+from ..utils import colors as rv_colors
 from .video_display_driver import VideoDisplayDriver
 
 class ST7789(VideoDisplayDriver):
@@ -208,7 +208,7 @@ class ST7789(VideoDisplayDriver):
         """
         Returns the default color mode for the display.
         """
-        return colors.COLOR_MODE_BGR565
+        return rv_colors.COLOR_MODE_BGR565
 
     def color_mode_is_supported(self, color_mode):
         """
@@ -219,7 +219,7 @@ class ST7789(VideoDisplayDriver):
         Returns:
             bool: True if the color mode is supported, otherwise False
         """
-        return color_mode == colors.COLOR_MODE_BGR565
+        return color_mode == rv_colors.COLOR_MODE_BGR565
 
     def show(self):
         """

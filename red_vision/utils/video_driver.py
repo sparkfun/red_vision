@@ -9,7 +9,7 @@
 #-------------------------------------------------------------------------------
 
 from ulab import numpy as np
-from . import colors
+from . import colors as rv_colors
 
 class VideoDriver():
     """
@@ -51,7 +51,7 @@ class VideoDriver():
             self._color_mode = color_mode
 
         # Create or store the image buffer.
-        self._bytes_per_pixel = colors.bytes_per_pixel(self._color_mode)
+        self._bytes_per_pixel = rv_colors.bytes_per_pixel(self._color_mode)
         buffer_shape = (self._height, self._width, self._bytes_per_pixel)
         if buffer is None:
             # No buffer provided, create a new one.
