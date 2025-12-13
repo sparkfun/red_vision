@@ -23,10 +23,10 @@ class VideoDisplay():
             driver,
             ):
         """
-        Initializes the display.
+        Initializes a VideoDisplay object with the provided driver.
 
         Args:
-            buffer_shape (tuple): Shape of the buffer as (rows, cols, channels)
+            driver (VideoDisplayDriver): Display driver to use
         """
         # Store driver reference.
         self._driver = driver

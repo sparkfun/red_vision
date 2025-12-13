@@ -28,20 +28,20 @@ class DVI(VideoDisplayDriver):
         Args:
             width (int): Display width in pixels
             height (int): Display height in pixels
-            rotation (int, optional): Orientation of display
-              - 0: Portrait (default)
-              - 1: Landscape
-              - 2: Inverted portrait
-              - 3: Inverted landscape
-            bgr_order (bool, optional): Color order
-              - True: BGR (default)
-              - False: RGB
-            reverse_bytes_in_word (bool, optional):
-              - Enable if the display uses LSB byte order for color words
+            color_mode (int, optional): Color mode
+              - COLOR_BGR233
+              - COLOR_GRAY8
+              - COLOR_BGR565 (default)
+              - COLOR_BGRA8888
+            buffer (ndarray, optional): Pre-allocated frame buffer.
         """
+        # Store parameters
         self._interface = interface
+
+        # Initialize the base display class
         super().__init__(height, width, color_mode, buffer)
 
+        # Begin the interface driver
         self._interface.begin(
             self._buffer,
             self._color_mode,

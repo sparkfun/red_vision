@@ -249,18 +249,33 @@ class HM01B0(DVP_Camera):
         Initializes the HM01B0 camera with default settings.
 
         Args:
+            interface (DVP_Interface): DVP interface driver
             i2c (I2C): I2C object for communication
-            i2c_address (int, optional): I2C address (default: 0x24)
-            num_data_pins (int, optional): Number of data pins
-                - 1 (Default)
+            i2c_address (int, optional): I2C address of the camera (default: 0x24)
+            num_data_pins (int, optional): Number of data pins for the camera to
+                use:
+                - 1 (default)
                 - 4
                 - 8
+            xclk_freq (int, optional): Frequency of the XCLK signal in Hz
+                (default: 25MHz)
+            continuous (bool, optional): Whether to run in continuous capture
+                mode (default: False)
+            height (int, optional): Image height in pixels
+            width (int, optional): Image width in pixels
+            color_mode (int, optional): Color mode to use:
+                - COLOR_MODE_BAYER_RG (default)
+            buffer (ndarray, optional): Pre-allocated image buffer
         """
+        # Store parameters
         self._interface = interface
         self._continuous = continuous
         self._num_data_pins = num_data_pins
+
+        # Initialize the base DVP_Camera class
         super().__init__(i2c, i2c_address, height, width, color_mode, buffer)
 
+        # Begin the interface driver
         self._interface.begin(
             self._buffer,
             xclk_freq = xclk_freq,
@@ -269,6 +284,7 @@ class HM01B0(DVP_Camera):
             continuous = self._continuous,
         )
 
+        # Reset and initialize the camera
         self._soft_reset()
         self._send_init(self._num_data_pins)
 

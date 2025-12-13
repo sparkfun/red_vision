@@ -891,6 +891,7 @@ class OV5640(DVP_Camera):
         interface,
         i2c,
         i2c_address = 0x3C,
+        xclk_freq = 20_000_000,
         continuous = False,
         height = None,
         width = None,
@@ -901,23 +902,39 @@ class OV5640(DVP_Camera):
         Initializes the OV5640 camera sensor with default settings.
 
         Args:
+            interface (DVP_Interface): DVP interface driver
             i2c (I2C): I2C object for communication
-            i2c_address (int, optional): I2C address (default: 0x3C)
+            i2c_address (int, optional): I2C address of the camera (default: 0x3C)
+            xclk_freq (int, optional): Frequency of the XCLK signal in Hz
+                (default: 20MHz)
+            continuous (bool, optional): Whether to run in continuous capture
+                mode (default: False)
+            height (int, optional): Image height in pixels
+            width (int, optional): Image width in pixels
+            color_mode (int, optional): Color mode to use:
+                - COLOR_MODE_BGR565 (default)
+            buffer (ndarray, optional): Pre-allocated image buffer
         """
+        # Store parameters
         self._interface = interface
         self._continuous = continuous
+
+        # Initialize the base DVP_Camera class
         super().__init__(i2c, i2c_address, height, width, color_mode, buffer)
 
+        # Begin the interface driver
         self._interface.begin(
             self._buffer,
-            xclk_freq = 20_000_000,
+            xclk_freq = xclk_freq,
             num_data_pins = 8,
             byte_swap = False,
             continuous = self._continuous,
         )
 
+        # Initialize the camera
         self._write_list(self._sensor_default_regs)
 
+        # Set default settings
         self._colorspace = self._OV5640_COLOR_RGB
         self._flip_x = True
         self._flip_y = True
@@ -930,6 +947,7 @@ class OV5640(DVP_Camera):
         self._ev = 0
         self._white_balance = 0
 
+        # Apply the initial size and colorspace
         self._set_size_and_colorspace()
 
     def resolution_default(self):

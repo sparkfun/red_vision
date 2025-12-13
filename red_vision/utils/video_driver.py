@@ -23,7 +23,13 @@ class VideoDriver():
             buffer = None,
             ):
         """
-        Initializes the camera.
+        Initializes a driver with the specified parameters.
+
+        Args:
+            height (int, optional): Image height in pixels
+            width (int, optional): Image width in pixels
+            color_mode (int, optional): Color mode to use
+            buffer (ndarray, optional): Pre-allocated image buffer
         """
         # Determine image resolution.
         if height is None or width is None:
@@ -65,22 +71,22 @@ class VideoDriver():
 
     def buffer(self):
         """
-        Returns the framebuffer used by the display.
+        Returns the image buffer used by the driver.
 
         Returns:
-            ndarray: Framebuffer
+            ndarray: Image buffer
         """
         return self._buffer
 
     def color_mode(self):
         """
-        Returns the current color mode of the display.
+        Returns the current color mode of the driver.
         """
         return self._color_mode
 
     def resolution_default(self):
         """
-        Returns the default resolution of the camera.
+        Returns the default resolution of the driver.
 
         Returns:
             tuple: (height, width)
@@ -89,7 +95,7 @@ class VideoDriver():
 
     def resolution_is_supported(self, height, width):
         """
-        Returns whether the given resolution is supported by the camera.
+        Returns whether the given resolution is supported by the driver.
 
         Args:
             height (int): Image height
@@ -101,7 +107,7 @@ class VideoDriver():
 
     def color_mode_default(self):
         """
-        Returns the default color mode of the camera.
+        Returns the default color mode of the driver.
 
         Returns:
             int: Color mode
@@ -110,9 +116,11 @@ class VideoDriver():
 
     def color_mode_is_supported(self, color_mode):
         """
-        Returns the default resolution of the camera.
+        Returns whether the given color mode is supported by the driver.
 
+        Args:
+            color_mode (int): Color mode to check
         Returns:
-            tuple: (height, width)
+            bool: True if supported, False otherwise
         """
         raise NotImplementedError("Subclass must implement this method")

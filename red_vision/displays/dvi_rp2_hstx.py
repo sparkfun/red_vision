@@ -120,13 +120,6 @@ class DVI_RP2_HSTX():
         Initializes the DVI HSTX display driver.
 
         Args:
-            width (int): Display width in pixels
-            height (int): Display height in pixels
-            color_mode (int, optional): Color mode
-              - COLOR_BGR233: 8-bit BGR233
-              - COLOR_GRAY8: 8-bit grayscale
-              - COLOR_BGR565: 16-bit BGR565 (default)
-              - COLOR_BGRA8888: 32-bit BGRA8888
             pin_clk_p (int, optional): TMDS clock lane positive pin (default: 14)
             pin_clk_n (int, optional): TMDS clock lane negative pin (default: 15)
             pin_d0_p (int, optional): TMDS data 0 lane positive pin (default: 18)
@@ -135,7 +128,6 @@ class DVI_RP2_HSTX():
             pin_d1_n (int, optional): TMDS data 1 lane negative pin (default: 17)
             pin_d2_p (int, optional): TMDS data 2 lane positive pin (default: 12)
             pin_d2_n (int, optional): TMDS data 2 lane negative pin (default: 13)
-            buffer (ndarray, optional): Pre-allocated frame buffer.
         """
         # Set pin numbers.
         self._pin_clk_p = pin_clk_p
@@ -150,6 +142,10 @@ class DVI_RP2_HSTX():
     def begin(self, buffer, color_mode):
         """
         Begins DVI output.
+
+        Args:
+            buffer (ndarray): Image buffer to read pixel data from
+            color_mode (int): Color mode of the image buffer
         """
         # Store buffer and color mode.
         self._buffer = buffer

@@ -127,28 +127,27 @@ class ST7789(VideoDisplayDriver):
     def __init__(
         self,
         interface,
+        rotation = ROTATION_LANDSCAPE,
         height = None,
         width = None,
         color_mode = None,
         buffer = None,
-        rotation = ROTATION_LANDSCAPE,
     ):
         """
         Initializes the ST7789 display driver.
 
         Args:
-            width (int): Display width in pixels
-            height (int): Display height in pixels
+            interface (SPI_Interface): Display interface driver
             rotation (int, optional): Orientation of display
-              - 0: Portrait (default)
-              - 1: Landscape
-              - 2: Inverted portrait
-              - 3: Inverted landscape
-            bgr_order (bool, optional): Color order
-              - True: BGR (default)
-              - False: RGB
-            reverse_bytes_in_word (bool, optional):
-              - Enable if the display uses LSB byte order for color words
+                - ROTATION_PORTRAIT
+                - ROTATION_LANDSCAPE (default)
+                - ROTATION_PORTRAIT_INVERTED
+                - ROTATION_LANDSCAPE_INVERTED
+            height (int): Display height in pixels
+            width (int): Display width in pixels
+            color_mode (int, optional): Color mode to use:
+                - COLOR_MODE_BGR565 (default)
+            buffer (ndarray, optional): Pre-allocated image buffer
         """
         self._interface = interface
         super().__init__(height, width, color_mode, buffer)

@@ -33,21 +33,9 @@ class SPI_Generic():
         Initializes the ST7789 SPI display driver.
 
         Args:
-            width (int): Display width in pixels
-            height (int): Display height in pixels
-            spi (SPI): SPI bus object
+            spi (SPI): SPI interface object
             pin_dc (int): Data/Command pin number
             pin_cs (int, optional): Chip Select pin number
-            rotation (int, optional): Orientation of display
-              - 0: Portrait (default)
-              - 1: Landscape
-              - 2: Inverted portrait
-              - 3: Inverted landscape
-            bgr_order (bool, optional): Color order
-              - True: BGR (default)
-              - False: RGB
-            reverse_bytes_in_word (bool, optional):
-              - Enable if the display uses LSB byte order for color words
         """
         # Store SPI arguments
         self._spi = spi

@@ -14,6 +14,8 @@ class VideoDisplayDriver(VideoDriver):
     """
     Red Vision abstract base class for display drivers.
     """
+    # No __init__() here, see VideoDriver.
+
     def show(self):
         """
         Updates the display with the contents of the framebuffer.

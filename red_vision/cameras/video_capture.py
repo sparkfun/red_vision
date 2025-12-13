@@ -22,7 +22,10 @@ class VideoCapture():
             driver,
             ):
         """
-        Initializes the camera.
+        Initializes a VideoCapture object with the provided driver.
+
+        Args:
+            driver (VideoCaptureDriver): Camera driver to use
         """
         # Store driver reference.
         self._driver = driver

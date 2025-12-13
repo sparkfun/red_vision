@@ -29,19 +29,26 @@ class DVP_Camera(VideoCaptureDriver):
         Args:
             i2c (I2C): I2C object for communication
             i2c_address (int): I2C address of the camera
+            height (int, optional): Image height in pixels
+            width (int, optional): Image width in pixels
+            color_mode (int, optional): Color mode to use
+            buffer (ndarray, optional): Pre-allocated image buffer
         """
-        super().__init__(height, width, color_mode, buffer)
-
+        # Store I2C parameters.
         self._i2c = i2c
         self._i2c_address = i2c_address
 
+        # Initialize the base VideoCaptureDriver class
+        super().__init__(height, width, color_mode, buffer)
+
     def _read_register(self, reg, nbytes=1):
         """
-        Reads a register from the camera over I2C.
+        Reads a register(s) from the camera over I2C.
 
         Args:
-            reg (int): Register address to read
-            nbytes (int): Number of bytes to read from the register
+            reg (int): Start register address to read
+            nbytes (int, optional): Number of bytes to read from the register
+                (default: 1)
 
         Returns:
             bytes: Data read from the register
@@ -51,11 +58,11 @@ class DVP_Camera(VideoCaptureDriver):
 
     def _write_register(self, reg, data):
         """
-        Writes data to a register on the camera over I2C.
+        Writes data to a register(s) on the camera over I2C.
 
         Args:
-            reg (int): Register address to write
-            data (bytes, int, list, tuple): Data to write to the register
+            reg (int): Start register address to write
+            data (bytes, int, list, tuple): Data to write to the register(s)
         """
         if isinstance(data, int):
             data = bytes([data])

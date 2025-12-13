@@ -38,25 +38,22 @@ class DVP_RP2_PIO():
         Initializes the DVP interface with the specified parameters.
 
         Args:
+            sm_id (int): PIO state machine ID
             pin_d0 (int): Data 0 pin number for DVP interface
             pin_vsync (int): Vertical sync pin number
             pin_hsync (int): Horizontal sync pin number
             pin_pclk (int): Pixel clock pin number
-            pin_xclk (int): External clock pin number
-            xclk_freq (int): Frequency in Hz for the external clock
-            sm_id (int): PIO state machine ID
-            num_data_pins (int): Number of data pins used in DVP interface
-            bytes_per_pixel (int): Number of bytes per pixel
-            byte_swap (bool): Whether to swap bytes in the captured data
-            continuous (bool): Whether to continuously capture frames
+            pin_xclk (int, optional): External clock pin number
         """
+        # Store state machine ID
+        self._sm_id = sm_id
+
         # Store pin assignments
         self._pin_d0 = pin_d0
         self._pin_vsync = pin_vsync
         self._pin_hsync = pin_hsync
         self._pin_pclk = pin_pclk
         self._pin_xclk = pin_xclk
-        self._sm_id = sm_id
 
     def begin(
             self,
@@ -66,6 +63,18 @@ class DVP_RP2_PIO():
             byte_swap,
             continuous = False,
         ):
+        """
+        Begins the DVP interface with the specified parameters.
+
+        Args:
+            buffer (ndarray): Image buffer to write captured frames into
+            xclk_freq (int): Frequency in Hz for the XCLK pin, if it is used
+            num_data_pins (int): Number of data pins used by the camera (1 to 8)
+            byte_swap (bool): Whether to swap bytes in each pixel
+            continuous (bool, optional): Whether to continuously capture frames
+                (default: False)
+        """
+        # Store buffer and its dimensions
         self._buffer = buffer
         self._height, self._width, self._bytes_per_pixel = buffer.shape
 
@@ -108,7 +117,7 @@ class DVP_RP2_PIO():
 
     def buffer(self):
         """
-        Returns the current frame buffer from the camera.
+        Returns the current frame buffer used by this driver.
 
         Returns:
             ndarray: Frame buffer
@@ -116,6 +125,9 @@ class DVP_RP2_PIO():
         return self._buffer
 
     def _setup_pio(self):
+        """
+        Sets up the PIO state machine for the DVP interface.
+        """
         # Copy the PIO program
         program = self._pio_read_dvp
 
@@ -505,6 +517,9 @@ class DVP_RP2_PIO():
     def _add_control_block(self, block):
         """
         Helper function to add a control block to the control block array.
+
+        Args:
+            block (array): Control block to add
         """
         # Add the control block to the array. Each control block is all 4 DMA
         # alias 0 registers in order.

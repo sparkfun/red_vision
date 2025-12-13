@@ -39,25 +39,13 @@ class SPI_RP2_PIO():
         Initializes the ST7789 PIO display driver.
 
         Args:
-            width (int): Display width in pixels
-            height (int): Display height in pixels
             sm_id (int): PIO state machine ID
             pin_clk (int): Clock pin number
             pin_tx (int): Data pin number
             pin_dc (int): Data/Command pin number
             pin_cs (int, optional): Chip Select pin number
-            freq (int, optional): Frequency in Hz for the PIO state machine
-                Default is -1, which uses the default frequency of 125MHz
-            rotation (int, optional): Orientation of display
-              - 0: Portrait (default)
-              - 1: Landscape
-              - 2: Inverted portrait
-              - 3: Inverted landscape
-            bgr_order (bool, optional): Color order
-              - True: BGR (default)
-              - False: RGB
-            reverse_bytes_in_word (bool, optional):
-              - Enable if the display uses LSB byte order for color words
+            freq (int, optional): Frequency in Hz for the PIO state machine.
+                Default is -1, which uses the system clock frequency
         """
         # Store PIO arguments
         self._sm_id = sm_id
