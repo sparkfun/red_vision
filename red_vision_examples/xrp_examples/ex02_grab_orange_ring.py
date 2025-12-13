@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex02_grab_orange_ring.py
+# red_vision_examples/xrp_examples/ex02_grab_orange_ring.py
 # 
 # The XRP can act as a bridge to FIRST programs, which includes summer camps
 # with FIRST-style games. Learn more here:

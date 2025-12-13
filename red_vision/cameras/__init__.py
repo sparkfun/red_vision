@@ -3,15 +3,19 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# cv2_drivers/cameras/__init__.py
+# red_vision/cameras/__init__.py
 # 
-# Imports all available camera drivers for MicroPython OpenCV.
+# Imports all available Red Vision camera drivers.
 #-------------------------------------------------------------------------------
 
-# Import sys module to check platform
-import sys
+# Import the generic VideoCapture class.
+from .video_capture import VideoCapture
 
-# Import RP2 drivers
+# Import platform agnostic drivers.
+from .hm01b0 import HM01B0
+from .ov5640 import OV5640
+
+# Import platform specific drivers.
+import sys
 if 'rp2' in sys.platform:
-    from . import hm01b0_pio
-    from . import ov5640_pio
+    from .dvp_rp2_pio import DVP_RP2_PIO

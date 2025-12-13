@@ -1,6 +1,15 @@
-# Initializes SD card and mounts it to the filesystem. This assumes the SD card
-# is on the same SPI bus as the display with a different chip select pin. You
-# may need to adjust this based on your specific board and configuration
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# 
+# Copyright (c) 2025 SparkFun Electronics
+#-------------------------------------------------------------------------------
+# red_vision_examples/rv_init/sd_card.py
+# 
+# This example module initializes an SD card and mounts it to the filesystem.
+# This assumes the SD card is on the same SPI bus as the display (if applicable)
+# with a different chip select pin. You may need to adjust this based on your
+# specific board and configuration.
+#-------------------------------------------------------------------------------
 
 # Import the Pin class for the chip select pin
 from machine import Pin

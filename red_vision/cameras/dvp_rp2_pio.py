@@ -3,11 +3,10 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# dvp_rp2_pio.py
+# red_vision/cameras/dvp_rp2_pio.py
 #
-# This class implements a DVP (Digital Video Port) interface using the RP2 PIO
-# (Programmable Input/Output) interface. This is only available on Raspberry Pi
-# RP2 processors.
+# Red Vision DVP (Digital Video Port) camera interface using the RP2 PIO
+# (Programmable Input/Output). Only available on Raspberry Pi RP2 processors.
 # 
 # This class is derived from:
 # https://github.com/adafruit/Adafruit_ImageCapture/blob/main/src/arch/rp2040.cpp
@@ -19,43 +18,36 @@ import rp2
 import array
 from machine import Pin, PWM
 from uctypes import addressof
+from ..utils import memory as rv_memory
 
 class DVP_RP2_PIO():
     """
-    This class implements a DVP (Digital Video Port) interface using the RP2 PIO
-    (Programmable Input/Output) interface. This is only available on Raspberry
-    Pi RP2 processors.
+    Red Vision DVP (Digital Video Port) camera interface using the RP2 PIO
+    (Programmable Input/Output). Only available on Raspberry Pi RP2 processors.
     """
     def __init__(
         self,
+        sm_id,
         pin_d0,
         pin_vsync,
         pin_hsync,
         pin_pclk,
-        pin_xclk,
-        xclk_freq,
-        sm_id,
-        num_data_pins,
-        bytes_per_pixel,
-        byte_swap,
-        continuous = False
+        pin_xclk = None,
     ):
         """
         Initializes the DVP interface with the specified parameters.
 
         Args:
+            sm_id (int): PIO state machine ID
             pin_d0 (int): Data 0 pin number for DVP interface
             pin_vsync (int): Vertical sync pin number
             pin_hsync (int): Horizontal sync pin number
             pin_pclk (int): Pixel clock pin number
-            pin_xclk (int): External clock pin number
-            xclk_freq (int): Frequency in Hz for the external clock
-            sm_id (int): PIO state machine ID
-            num_data_pins (int): Number of data pins used in DVP interface
-            bytes_per_pixel (int): Number of bytes per pixel
-            byte_swap (bool): Whether to swap bytes in the captured data
-            continuous (bool): Whether to continuously capture frames
+            pin_xclk (int, optional): External clock pin number
         """
+        # Store state machine ID
+        self._sm_id = sm_id
+
         # Store pin assignments
         self._pin_d0 = pin_d0
         self._pin_vsync = pin_vsync
@@ -63,35 +55,79 @@ class DVP_RP2_PIO():
         self._pin_pclk = pin_pclk
         self._pin_xclk = pin_xclk
 
+    def begin(
+            self,
+            buffer,
+            xclk_freq,
+            num_data_pins,
+            byte_swap,
+            continuous = False,
+        ):
+        """
+        Begins the DVP interface with the specified parameters.
+
+        Args:
+            buffer (ndarray): Image buffer to write captured frames into
+            xclk_freq (int): Frequency in Hz for the XCLK pin, if it is used
+            num_data_pins (int): Number of data pins used by the camera (1 to 8)
+            byte_swap (bool): Whether to swap bytes in each pixel
+            continuous (bool, optional): Whether to continuously capture frames
+                (default: False)
+        """
+        # Store buffer and its dimensions
+        self._buffer = buffer
+        self._height, self._width, self._bytes_per_pixel = buffer.shape
+
         # Initialize DVP pins as inputs
         self._num_data_pins = num_data_pins
         for i in range(num_data_pins):
-            Pin(pin_d0+i, Pin.IN)
-        Pin(pin_vsync, Pin.IN)
-        Pin(pin_hsync, Pin.IN)
-        Pin(pin_pclk, Pin.IN)
+            Pin(self._pin_d0+i, Pin.IN)
+        Pin(self._pin_vsync, Pin.IN)
+        Pin(self._pin_hsync, Pin.IN)
+        Pin(self._pin_pclk, Pin.IN)
 
         # Set up XCLK pin if provided
         if self._pin_xclk is not None:
-            self._xclk = PWM(Pin(pin_xclk))
+            self._xclk = PWM(Pin(self._pin_xclk))
             self._xclk.freq(xclk_freq)
             self._xclk.duty_u16(32768) # 50% duty cycle
 
+        # If there's only 1 byte per pixel, we can safely transfer multiple
+        # pixels at a time without worrying about byte alignment. So we use the
+        # maximum of 4 pixels per transfer to improve DMA efficiency.
+        if self._bytes_per_pixel == 1:
+            self._bytes_per_transfer = 4
+            # The PIO left shifts the pixel data in the FIFO buffer, so we need
+            # to swap the bytes to get the correct order.
+            byte_swap = True
+        else:
+            self._bytes_per_transfer = self._bytes_per_pixel
+
         # Store transfer parameters
-        self._bytes_per_pixel = bytes_per_pixel
         self._byte_swap = byte_swap
-        
+
         # Whether to continuously capture frames
         self._continuous = continuous
 
         # Set up the PIO state machine
-        self._sm_id = sm_id
         self._setup_pio()
 
         # Set up the DMA controllers
         self._setup_dmas()
 
+    def buffer(self):
+        """
+        Returns the current frame buffer used by this driver.
+
+        Returns:
+            ndarray: Frame buffer
+        """
+        return self._buffer
+
     def _setup_pio(self):
+        """
+        Sets up the PIO state machine for the DVP interface.
+        """
         # Copy the PIO program
         program = self._pio_read_dvp
 
@@ -108,7 +144,7 @@ class DVP_RP2_PIO():
             self._sm_id,
             program,
             in_base = self._pin_d0,
-            push_thresh = self._bytes_per_pixel * 8
+            push_thresh = self._bytes_per_transfer * 8
         )
 
     # Here is the PIO program, which is configurable to mask in the GPIO pins
@@ -127,22 +163,6 @@ class DVP_RP2_PIO():
         wait(1, gpio, 0) # Mask in PCLK pin
         in_(pins, 32)    # Mask in number of pins
         wait(0, gpio, 0) # Mask in PCLK pin
-
-    def _is_in_sram(self, data_addr):
-        """
-        Checks whether a given memory address is in SRAM.
-
-        Args:
-            data_addr (int): Memory address to check
-        Returns:
-            bool: True if address is in SRAM, False otherwise
-        """
-        # SRAM address range.
-        SRAM_BASE = 0x20000000
-        total_sram_size = 520*1024 # 520 KB
-        
-        # Return whether address is in SRAM.
-        return data_addr >= SRAM_BASE and data_addr < SRAM_BASE + total_sram_size
 
     def _setup_dmas(self):
         """
@@ -239,7 +259,7 @@ class DVP_RP2_PIO():
         self._dma_executer = rp2.DMA()
 
         # Check if the display buffer is in PSRAM.
-        self._buffer_is_in_psram = not self._is_in_sram(addressof(self._buffer))
+        self._buffer_is_in_psram = rv_memory.is_in_external_ram(self._buffer)
 
         # If the buffer is in PSRAM, create the streamer DMA channel and row
         # buffer in SRAM.
@@ -253,7 +273,7 @@ class DVP_RP2_PIO():
 
             # Verify row buffer is in SRAM. If not, we'll still have the same
             # latency problem.
-            if not self._is_in_sram(addressof(self._row_buffer)):
+            if rv_memory.is_in_external_ram(self._row_buffer):
                 raise MemoryError("not enough space in SRAM for row buffer")
 
         # Create DMA control register values.
@@ -304,7 +324,7 @@ class DVP_RP2_PIO():
         # needed. Once done, it chains back to the dispatcher to get the next
         # control block.
         self._dma_ctrl_pio_repeat = self._dma_executer.pack_ctrl(
-            size        = {1:0, 2:1, 4:2}[self._bytes_per_pixel],
+            size        = {1:0, 2:1, 4:2}[self._bytes_per_transfer],
             inc_read    = False,
             inc_write   = True,
             # ring_size = 0,
@@ -430,7 +450,7 @@ class DVP_RP2_PIO():
             self._cb_pio_repeat = array.array('I', [
                 pio_rx_fifo_addr, # READ_ADDR
                 addressof(self._row_buffer), # WRITE_ADDR
-                self._bytes_per_row // self._bytes_per_pixel, # TRANS_COUNT
+                self._bytes_per_row // self._bytes_per_transfer, # TRANS_COUNT
                 self._dma_ctrl_pio_repeat, # CTRL_TRIG
             ])
 
@@ -497,6 +517,9 @@ class DVP_RP2_PIO():
     def _add_control_block(self, block):
         """
         Helper function to add a control block to the control block array.
+
+        Args:
+            block (array): Control block to add
         """
         # Add the control block to the array. Each control block is all 4 DMA
         # alias 0 registers in order.

@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex06_detect_sfe_logo.py
+# red_vision_examples/ex06_detect_sfe_logo.py
 # 
 # This example demonstrates a basic vision processing pipeline. A pipeline is
 # just a sequence of steps used to extract meaningful data from an image. The

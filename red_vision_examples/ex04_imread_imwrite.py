@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex04_imread_imwrite.py
+# red_vision_examples/ex04_imread_imwrite.py
 # 
 # This example demonstrates how to read and write images to and from the
 # MicroPython filesystem using `cv.imread()` and `cv.imwrite()`. Any paths

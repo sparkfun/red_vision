@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex02_camera.py
+# red_vision_examples/ex02_camera.py
 # 
 # This example demonstrates how to read frames from a camera and show them on a
 # display using OpenCV in MicroPython. It can be used to verify that the camera
