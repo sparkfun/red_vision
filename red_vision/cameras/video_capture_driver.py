@@ -14,7 +14,11 @@ class VideoCaptureDriver(VideoDriver):
     """
     Red Vision abstract base class for camera drivers.
     """
-    # No __init__() here, see VideoDriver.
+    def __init__(self, *args, **kwargs):
+        """
+        Initializes the camera driver. See VideoDriver for parameters.
+        """
+        super().__init__(*args, **kwargs)
 
     def open(self):
         """

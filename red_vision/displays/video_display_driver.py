@@ -14,10 +14,14 @@ class VideoDisplayDriver(VideoDriver):
     """
     Red Vision abstract base class for display drivers.
     """
-    # No __init__() here, see VideoDriver.
+    def __init__(self, *args, **kwargs):
+        """
+        Initializes the display driver. See VideoDriver for parameters.
+        """
+        super().__init__(*args, **kwargs)
 
     def show(self):
         """
-        Updates the display with the contents of the framebuffer.
+        Updates the display with the contents of the image buffer.
         """
         raise NotImplementedError("Subclass must implement this method")
