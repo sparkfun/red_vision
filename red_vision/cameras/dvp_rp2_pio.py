@@ -116,6 +116,9 @@ class DVP_RP2_PIO():
         # Set up the DMA controllers
         self._setup_dmas()
 
+        # Set flag indicating the interface is not yet opened
+        self._opened = False
+
     def buffer(self):
         """
         Returns the current frame buffer used by this driver.
@@ -124,6 +127,58 @@ class DVP_RP2_PIO():
             ndarray: Frame buffer
         """
         return self._buffer
+
+    def open(self):
+        """
+        Captures a frame of data from the DVP interface.
+        """
+        # Check if already opened.
+        if self._opened:
+            return
+
+        # Mark as opened.
+        self._opened = True
+
+        # If not in continuous mode, nothing else to do.
+        if not self._continuous:
+            return
+
+        # We're in continuous mode, start capturing.
+        self._start_capture()
+
+    def release(self):
+        # Check if already released.
+        if not self._opened:
+            return
+        
+        # Mark as not opened.
+        self._opened = False
+
+        # If not in continuous mode, nothing else to do.
+        if not self._continuous:
+            return
+
+        # We're in continuous mode, stop capturing.
+        self._stop_capture()
+
+    def grab(self):
+        """
+        Captures a frame of data from the DVP interface.
+        """
+        # Check if opened.
+        if not self._opened:
+            # Not opened, cannot capture.
+            return False
+        
+        # If we're in continuous mode, capturing is already happening.
+        if self._continuous:
+            return True
+
+        # We're not in continuous mode, start a single capture.
+        self._start_capture()
+
+        # Stop the capture when it's done.
+        self._stop_capture()
 
     def _setup_pio(self):
         """
@@ -532,15 +587,11 @@ class DVP_RP2_PIO():
         # Increment the control block index for the next control block.
         self._cb_index += 4
 
-    def _capture(self):
+    def _start_capture(self):
         """
-        Captures a frame of data from the DVP interface.
+        Starts capturing frames from the DVP interface. Waits for falling edge
+        on VSYNC to ensure the current frame is complete.
         """
-        # If the buffer is in SRAM and the state machine is already active,
-        # new frames are being captured continuously, so just return.
-        if not self._buffer_is_in_psram and self._sm.active() == True:
-            return
-
         # If the image buffer is in PSRAM, the streamer DMA channel needs to
         # be reconfigured for each frame to reset the write address.
         if self._buffer_is_in_psram:
@@ -562,7 +613,9 @@ class DVP_RP2_PIO():
             trigger = False,
         )
 
-        # Wait for VSYNC to go low, indicating the end of the current frame.
+        # Wait for a falling edge on VSYNC, indicating the end of the frame.
+        while Pin(self._pin_vsync, Pin.IN).value() == False:
+            pass
         while Pin(self._pin_vsync, Pin.IN).value() == True:
             pass
         
@@ -575,16 +628,16 @@ class DVP_RP2_PIO():
         # Start the dispatcher DMA channel.
         self._dma_dispatcher.active(True)
 
-        # If the buffer is in SRAM and we're in continuous mode, the control
-        # block sequence will restart automatically, so nothing else to do. But
-        # if the buffer is in PSRAM, we need to wait for the frame to finish.
-        if self._buffer_is_in_psram or self._continuous == False:
-            # Wait for VSYNC to go high then low again, indicating the end of
-            # the next frame.
-            while Pin(self._pin_vsync, Pin.IN).value() == False:
-                pass
-            while Pin(self._pin_vsync, Pin.IN).value() == True:
-                pass
-            
-            # Deactivate the state machine.
-            self._sm.active(False)
+    def _stop_capture(self):
+        """
+        Stops capturing frames from the DVP interface. Waits for falling edge on
+        VSYNC to ensure the current frame is complete.
+        """
+        # Wait for a falling edge on VSYNC, indicating the end of the frame.
+        while Pin(self._pin_vsync, Pin.IN).value() == False:
+            pass
+        while Pin(self._pin_vsync, Pin.IN).value() == True:
+            pass
+
+        # Deactivate the state machine.
+        self._sm.active(False)

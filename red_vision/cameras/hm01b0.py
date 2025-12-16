@@ -333,13 +333,13 @@ class HM01B0(DVP_Camera):
         """
         Opens the camera and prepares it for capturing images.
         """
-        pass
+        self._interface.open()
 
     def release(self):
         """
         Releases the camera and frees any resources.
         """
-        pass
+        self._interface.release()
 
     def grab(self):
         """
@@ -348,8 +348,7 @@ class HM01B0(DVP_Camera):
         Returns:
             bool: True if the frame was grabbed successfully, otherwise False
         """
-        self._interface._capture()
-        return True
+        return self._interface.grab()
 
     def _is_connected(self):
         """

@@ -124,4 +124,3 @@ camera = rv.cameras.VideoCapture(driver)
 
 # Open the camera to start the continuous capture process.
 camera.open()
-camera.grab()
