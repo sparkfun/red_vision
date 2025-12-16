@@ -130,7 +130,7 @@ class DVP_RP2_PIO():
 
     def open(self):
         """
-        Captures a frame of data from the DVP interface.
+        Opens this interface for capturing frames.
         """
         # Check if already opened.
         if self._opened:
@@ -147,6 +147,9 @@ class DVP_RP2_PIO():
         self._start_capture()
 
     def release(self):
+        """
+        Releases this interface and frees any resources.
+        """
         # Check if already released.
         if not self._opened:
             return
@@ -160,6 +163,15 @@ class DVP_RP2_PIO():
 
         # We're in continuous mode, stop capturing.
         self._stop_capture()
+
+    def isOpened(self):
+        """
+        Checks if this interface is opened.
+
+        Returns:
+            bool: True if this interface is opened, otherwise False
+        """
+        return self._opened
 
     def grab(self):
         """
@@ -179,6 +191,7 @@ class DVP_RP2_PIO():
 
         # Stop the capture when it's done.
         self._stop_capture()
+        return True
 
     def _setup_pio(self):
         """

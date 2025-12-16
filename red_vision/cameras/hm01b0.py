@@ -341,6 +341,15 @@ class HM01B0(DVP_Camera):
         """
         self._interface.release()
 
+    def isOpened(self):
+        """
+        Checks if the camera is opened.
+
+        Returns:
+            bool: True if the camera is opened, otherwise False
+        """
+        return self._interface.isOpened()
+
     def grab(self):
         """
         Grabs a single frame from the camera.

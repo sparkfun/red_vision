@@ -42,6 +42,15 @@ class VideoCapture():
         """
         self._driver.release()
 
+    def isOpened(self):
+        """
+        Checks if the camera is opened.
+
+        Returns:
+            bool: True if the camera is opened, otherwise False
+        """
+        return self._driver.isOpened()
+
     def grab(self):
         """
         Grabs a single frame from the camera.
