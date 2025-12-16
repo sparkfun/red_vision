@@ -16,6 +16,7 @@
 
 import rp2
 import array
+from ulab import numpy as np
 from machine import Pin, PWM
 from uctypes import addressof
 from ..utils import memory as rv_memory
@@ -269,7 +270,7 @@ class DVP_RP2_PIO():
 
             # Create the row buffer.
             self._bytes_per_row = self._width * self._bytes_per_pixel
-            self._row_buffer = array.array("I", [0] * (self._bytes_per_row // 4))
+            self._row_buffer = np.zeros((self._bytes_per_row), dtype=np.uint8)
 
             # Verify row buffer is in SRAM. If not, we'll still have the same
             # latency problem.
