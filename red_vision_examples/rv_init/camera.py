@@ -81,7 +81,7 @@ driver = rv.cameras.HM01B0(
 # )
 
 ################################################################################
-# Display Object
+# Camera Object
 ################################################################################
 
 # Here we create the main VideoCapture object using the selected driver.
