@@ -15,6 +15,7 @@
 #-------------------------------------------------------------------------------
 
 # Imports
+import gc
 import rp2
 import machine
 import array
@@ -147,6 +148,10 @@ class DVI_RP2_HSTX():
             buffer (ndarray): Image buffer to read pixel data from
             color_mode (int): Color mode of the image buffer
         """
+        # RP2 has very limited SRAM, but some things need to be in SRAM. So run
+        # a garbage collection now to free up as much memory as possible.
+        gc.collect()
+
         # Store buffer and color mode.
         self._buffer = buffer
         self._color_mode = color_mode

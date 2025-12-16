@@ -14,6 +14,7 @@
 # Copyright (c) 2021 Adafruit Industries
 #-------------------------------------------------------------------------------
 
+import gc
 import rp2
 import array
 from ulab import numpy as np
@@ -75,6 +76,10 @@ class DVP_RP2_PIO():
             continuous (bool, optional): Whether to continuously capture frames
                 (default: False)
         """
+        # RP2 has very limited SRAM, but some things need to be in SRAM. So run
+        # a garbage collection now to free up as much memory as possible.
+        gc.collect()
+
         # Store buffer and its dimensions
         self._buffer = buffer
         self._height, self._width, self._bytes_per_pixel = buffer.shape
@@ -468,6 +473,11 @@ class DVP_RP2_PIO():
 
         # Create control block array.
         self._control_blocks = array.array('I', [0] * num_cb)
+
+        # The control block array must be in SRAM, otherwise we run into the
+        # same latency problem with DMA transfers from PSRAM.
+        if rv_memory.is_in_external_ram(self._control_blocks):
+            raise MemoryError("not enough space in SRAM for control block array")
 
         # Below are the individual control block definitions, to be written to
         # the alias 0 registers of each DMA channel (see section 12.6.3.1 of the
