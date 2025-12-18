@@ -20,3 +20,14 @@ spi = SPI(
     # mosi = 3,
     # miso = 4,
 )
+
+# Some boards use the same SPI bus for both the display and the SD card, others
+# have separate buses. We'll create a separate `spi_sd` object for the SD card.
+import sys
+if "IoT RedBoard RP2350" in sys.implementation._machine:
+    spi_sd = SPI(
+        1,
+        baudrate = 24_000_000,
+    )
+else:
+    spi_sd = spi

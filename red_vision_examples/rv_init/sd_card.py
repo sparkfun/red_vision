@@ -14,8 +14,8 @@
 # Import the Pin class for the board's default pins.
 from machine import Pin
 
-# Import the SPI bus
-from .bus_spi import spi
+# Import the SPI bus.
+from .bus_spi import spi_sd as spi
 
 # When the SD card is initialized, it changes the SPI bus baudrate. We'll
 # want to revert it, so we need to know the original baudrate. There's no
