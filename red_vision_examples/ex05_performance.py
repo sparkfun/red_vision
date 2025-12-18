@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex05_performance.py
+# red_vision_examples/ex05_performance.py
 # 
 # This example demonstrates some performance optimization techniques, and ways
 # to measure performance in the MicroPython port of OpenCV. Read through the
@@ -16,7 +16,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, camera
 
 # Import NumPy to create arrays
 from ulab import numpy as np

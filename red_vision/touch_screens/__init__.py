@@ -3,10 +3,10 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# cv2_drivers/touch_screens/__init__.py
+# red_vision/touch_screens/__init__.py
 # 
-# Imports all available touch screen drivers for MicroPython OpenCV.
+# Imports all available Red Vision touch screen drivers.
 #-------------------------------------------------------------------------------
 
-# Import platform agnostic drivers
-from . import cst816
+# Import platform agnostic drivers.
+from .cst816 import CST816

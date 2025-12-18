@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex03_touch_screen.py
+# red_vision_examples/ex03_touch_screen.py
 # 
 # This example demonstrates how to read input from a touch screen, which can be
 # used to verify that the touch screen driver is functioning. It simply draws
@@ -12,7 +12,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, touch_screen
 
 # Import NumPy
 from ulab import numpy as np

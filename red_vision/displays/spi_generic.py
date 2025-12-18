@@ -3,9 +3,9 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# st7789_spi.py
+# red_vision/displays/spi_generic.py
 #
-# OpenCV ST7789 display driver using a SPI interface.
+# Red Vision SPI display driver using a generic SPI interface.
 # 
 # This class is derived from:
 # https://github.com/easytarget/st7789-framebuffer/blob/main/st7789_purefb.py
@@ -16,52 +16,40 @@
 # Copyright (c) 2019 Ivan Belokobylskiy
 #-------------------------------------------------------------------------------
 
-from .st7789 import ST7789
 from machine import Pin
+from ..utils.pins import save_pin_mode_alt
 
-class ST7789_SPI(ST7789):
+class SPI_Generic():
     """
-    OpenCV ST7789 display driver using a SPI interface.
+    Red Vision SPI display driver using a generic SPI interface.
     """
     def __init__(
         self,
-        width,
-        height,
         spi,
         pin_dc,
         pin_cs=None,
-        rotation=0,
-        bgr_order=True,
-        reverse_bytes_in_word=True,
     ):
         """
         Initializes the ST7789 SPI display driver.
 
         Args:
-            width (int): Display width in pixels
-            height (int): Display height in pixels
-            spi (SPI): SPI bus object
+            spi (SPI): SPI interface object
             pin_dc (int): Data/Command pin number
             pin_cs (int, optional): Chip Select pin number
-            rotation (int, optional): Orientation of display
-              - 0: Portrait (default)
-              - 1: Landscape
-              - 2: Inverted portrait
-              - 3: Inverted landscape
-            bgr_order (bool, optional): Color order
-              - True: BGR (default)
-              - False: RGB
-            reverse_bytes_in_word (bool, optional):
-              - Enable if the display uses LSB byte order for color words
         """
         # Store SPI arguments
         self._spi = spi
         self._dc = Pin(pin_dc) # Don't change mode/alt
         self._cs = Pin(pin_cs, Pin.OUT, value=1) if pin_cs else None
 
-        super().__init__(width, height, rotation, bgr_order, reverse_bytes_in_word)
+    def begin(self):
+        """
+        Initializes the SPI interface for the display.
+        """
+        # Nothing to do for SPI
+        pass
 
-    def _write(self, command=None, data=None):
+    def write(self, command=None, data=None):
         """
         Writes commands and data to the display.
 
@@ -71,7 +59,7 @@ class ST7789_SPI(ST7789):
         """
         # Save the current mode and alt of the DC pin in case it's used by
         # another device on the same SPI bus
-        dcMode, dcAlt = self._save_pin_mode_alt(self._dc)
+        dcMode, dcAlt = save_pin_mode_alt(self._dc)
 
         # Temporarily set the DC pin to output mode
         self._dc.init(mode=Pin.OUT)

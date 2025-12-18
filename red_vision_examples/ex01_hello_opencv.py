@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex01_hello_opencv.py
+# red_vision_examples/ex01_hello_opencv.py
 # 
 # This example demonstrates near-minimal code to get started with OpenCV in
 # MicroPython. It can be used to verify that OpenCV is working correctly, and
@@ -20,7 +20,7 @@ import cv2 as cv
 # The examples import a module called `cv2_hardware_init`, which initializes the
 # drivers. You may need to edit the contents of the `cv2_hardware_init` module
 # based on your specific board and hardware configuration
-from rv_init import *
+from rv_init import display
 
 # Import NumPy, almost like any other Python environment! The only difference is
 # the addition of `from ulab` since MicroPython does not have a full NumPy

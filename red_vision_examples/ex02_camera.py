@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex02_camera.py
+# red_vision_examples/ex02_camera.py
 # 
 # This example demonstrates how to read frames from a camera and show them on a
 # display using OpenCV in MicroPython. It can be used to verify that the camera
@@ -12,7 +12,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, camera
 
 # Open a camera, similar to any other Python environment! In standard OpenCV,
 # you would use `cv.VideoCapture(0)` or similar, and OpenCV would leverage the

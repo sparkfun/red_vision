@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex06_detect_sfe_logo.py
+# red_vision_examples/ex06_detect_sfe_logo.py
 # 
 # This example demonstrates a basic vision processing pipeline. A pipeline is
 # just a sequence of steps used to extract meaningful data from an image. The
@@ -21,7 +21,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, camera
 
 # Import NumPy
 from ulab import numpy as np

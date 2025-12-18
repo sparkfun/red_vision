@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex01_touch_screen_drive.py
+# red_vision_examples/xrp_examples/ex01_touch_screen_drive.py
 # 
 # This example creates a simple touch screen interface to drive the XRP robot.
 # It creates arrow buttons to drive around, and a stop button to exit the
@@ -12,11 +12,11 @@
 #-------------------------------------------------------------------------------
 
 # Import XRPLib defaults
-from XRPLib.defaults import *
+from XRPLib.defaults import drivetrain
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display, touch_screen
 
 # Import NumPy
 from ulab import numpy as np
@@ -39,28 +39,13 @@ stop_size = 25
 stop_background_color = (0, 0, 255)
 
 def create_ui_image():
-    # Initialize arrow button images. This could be done with a single image
-    # that gets transposed and flipped, but ulab's transpose() doesn't support
-    # the axes argument:
-    # https://github.com/v923z/micropython-ulab/issues/731
-    # So we instead create separate images for vertical and horizontal arrows
-    img_arrow_vertical = np.zeros(button_shape, dtype=np.uint8)
-    img_arrow_vertical[:, :] = arrow_background_color
-    img_arrow_horizontal = img_arrow_vertical.copy()
-    img_arrow_vertical = cv.arrowedLine(
-        img_arrow_vertical,
+    # Initialize arrow button image
+    img_arrow = np.zeros(button_shape, dtype=np.uint8)
+    img_arrow[:, :] = arrow_background_color
+    img_arrow = cv.arrowedLine(
+        img_arrow,
         (button_cx, button_cy + arrow_length // 2),
         (button_cx, button_cy - arrow_length // 2),
-        button_color,
-        arrow_thickness,
-        cv.FILLED,
-        0,
-        arrow_tip_length
-    )
-    img_arrow_horizontal = cv.arrowedLine(
-        img_arrow_horizontal,
-        (button_cx - arrow_length // 2, button_cy),
-        (button_cx + arrow_length // 2, button_cy),
         button_color,
         arrow_thickness,
         cv.FILLED,
@@ -92,25 +77,25 @@ def create_ui_image():
     img_ui[
         ui_cy-button_spacing-button_cy:ui_cy-button_spacing+button_cy,
         ui_cx-button_cx:ui_cx+button_cx
-    ] = img_arrow_vertical
+    ] = img_arrow
     
     # Draw the backward arrow below the stop button
     img_ui[
         ui_cy+button_spacing-button_cy:ui_cy+button_spacing+button_cy,
         ui_cx-button_cx:ui_cx+button_cx
-    ] = img_arrow_vertical[::-1, :]  # Flip the arrow image vertically
+    ] = img_arrow[::-1, :]  # Flip the arrow image vertically
+
+    # Draw the left arrow to the left of the stop button
+    img_ui[
+        ui_cy-button_cy:ui_cy+button_cy,
+        ui_cx-button_spacing-button_cx:ui_cx-button_spacing+button_cx
+    ] = img_arrow.transpose((1, 0, 2))
     
     # Draw the right arrow to the right of the stop button
     img_ui[
         ui_cy-button_cy:ui_cy+button_cy,
         ui_cx+button_spacing-button_cx:ui_cx+button_spacing+button_cx
-    ] = img_arrow_horizontal
-    
-    # Draw the left arrow to the left of the stop button
-    img_ui[
-        ui_cy-button_cy:ui_cy+button_cy,
-        ui_cx-button_spacing-button_cx:ui_cx-button_spacing+button_cx
-    ] = img_arrow_horizontal[:, ::-1]  # Flip the arrow image horizontally
+    ] = img_arrow.transpose((1, 0, 2))[:, ::-1]  # Flip the arrow image horizontally
 
     # Return the UI image
     return img_ui

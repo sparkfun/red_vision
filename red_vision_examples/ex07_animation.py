@@ -3,7 +3,7 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# ex07_animation.py
+# red_vision_examples/ex07_animation.py
 # 
 # This example demonstrates how to play an animation using a series of frames
 # stored in a single image file. It assumes full 320x240 frames are stacked
@@ -14,7 +14,7 @@
 
 # Import OpenCV and hardware initialization module
 import cv2 as cv
-from rv_init import *
+from rv_init import display
 
 # Load an animation sheet image that contains multiple frames of an animation
 animation_sheet = cv.imread("red_vision_examples/images/animation_sheet.png")

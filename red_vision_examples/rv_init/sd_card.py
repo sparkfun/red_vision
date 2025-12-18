@@ -1,12 +1,21 @@
-# Initializes SD card and mounts it to the filesystem. This assumes the SD card
-# is on the same SPI bus as the display with a different chip select pin. You
-# may need to adjust this based on your specific board and configuration
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# 
+# Copyright (c) 2025 SparkFun Electronics
+#-------------------------------------------------------------------------------
+# red_vision_examples/rv_init/sd_card.py
+# 
+# This example module initializes an SD card and mounts it to the filesystem.
+# This assumes the SD card is on the same SPI bus as the display (if applicable)
+# with a different chip select pin. You may need to adjust this based on your
+# specific board and configuration.
+#-------------------------------------------------------------------------------
 
-# Import the Pin class for the chip select pin
+# Import the Pin class for the board's default pins.
 from machine import Pin
 
-# Import the SPI bus
-from .bus_spi import spi
+# Import the SPI bus.
+from .bus_spi import spi_sd as spi
 
 # When the SD card is initialized, it changes the SPI bus baudrate. We'll
 # want to revert it, so we need to know the original baudrate. There's no
@@ -16,8 +25,8 @@ from .bus_spi import spi
 spi_str = str(spi)
 baudrate = int(spi_str[spi_str.index("baudrate=") + 9:].partition(",")[0])
 
-# Set the chip select pin for the SD card
-sd_cs = Pin(7, Pin.OUT)
+# Set the chip select pin for the SD card.
+sd_cs = Pin(Pin.board.SD_CS, Pin.OUT)
 
 try:
     # Import the SD card module. This is often not installed by default in

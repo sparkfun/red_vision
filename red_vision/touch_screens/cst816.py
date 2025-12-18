@@ -3,9 +3,9 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# st7789.py
+# red_vision/touch_screens/cst816.py
 #
-# Base class for OpenCV ST7789 display drivers.
+# Red Vision CST816 touch screen driver.
 # 
 # This class is derived from:
 # https://github.com/fbiego/CST816S
@@ -13,11 +13,9 @@
 # Copyright (c) 2021 Felix Biego
 #-------------------------------------------------------------------------------
 
-from .cv2_touch_screen import CV2_Touch_Screen
-
-class CST816(CV2_Touch_Screen):
+class CST816():
     """
-    OpenCV CST816 touch screen driver using an I2C interface.
+    Red Vision CST816 touch screen driver.
     """
     _I2C_ADDRESS = 0x15
     _CHIP_ID = 0xB6
@@ -108,7 +106,7 @@ class CST816(CV2_Touch_Screen):
         Returns:
             int: The chip ID of the HM01B0 (should be 0xB6).
         """
-        return self.read_register_value(self._REG_CHIP_ID)
+        return self._read_register_value(self._REG_CHIP_ID)
 
     def is_touched(self):
         """
@@ -118,7 +116,7 @@ class CST816(CV2_Touch_Screen):
             bool: True if touching, False otherwise
         """
         # Read the number of touches
-        touch_num = self.read_register_value(self._REG_FINGER_NUM)
+        touch_num = self._read_register_value(self._REG_FINGER_NUM)
 
         # If there are any touches, return True
         return touch_num > 0
@@ -131,8 +129,8 @@ class CST816(CV2_Touch_Screen):
         Returns:
             tuple: (x, y) coordinates of the touch point
         """
-        x = self.read_register_value(self._REG_X_POS_H, 2) & 0x0FFF
-        y = self.read_register_value(self._REG_Y_POS_H, 2) & 0x0FFF
+        x = self._read_register_value(self._REG_X_POS_H, 2) & 0x0FFF
+        y = self._read_register_value(self._REG_Y_POS_H, 2) & 0x0FFF
 
         # Adjust for the rotation
         if self.rotation == 0:
@@ -146,7 +144,7 @@ class CST816(CV2_Touch_Screen):
 
         return (x, y)
 
-    def read_register_value(self, reg, num_bytes=1):
+    def _read_register_value(self, reg, num_bytes=1):
         """
         Read a single byte from the specified register.
 

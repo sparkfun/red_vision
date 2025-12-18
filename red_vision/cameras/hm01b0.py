@@ -3,9 +3,9 @@
 # 
 # Copyright (c) 2025 SparkFun Electronics
 #-------------------------------------------------------------------------------
-# hm01b0.py
+# red_vision/cameras/hm01b0.py
 #
-# Base class for OpenCV HM01B0 camera drivers.
+# Red Vision HM01B0 camera driver.
 # 
 # This class is derived from:
 # https://github.com/openmv/openmv/blob/5acf5baf92b4314a549bdd068138e5df6cc0bac7/drivers/sensors/hm01b0.c
@@ -15,11 +15,11 @@
 
 from .dvp_camera import DVP_Camera
 from time import sleep_us
-import cv2
+from ..utils import colors as rv_colors
 
 class HM01B0(DVP_Camera):
     """
-    Base class for OpenCV HM01B0 camera drivers.
+    Red Vision HM01B0 camera driver.
     """
     # Read only registers
     _MODEL_ID_H = 0x0000
@@ -234,26 +234,131 @@ class HM01B0(DVP_Camera):
 
     def __init__(
         self,
+        interface,
         i2c,
         i2c_address = 0x24,
-        num_data_pins = 1
+        num_data_pins = 1,
+        xclk_freq = 25_000_000,
+        continuous = False,
+        height = None,
+        width = None,
+        color_mode = None,
+        buffer = None,
     ):
         """
         Initializes the HM01B0 camera with default settings.
 
         Args:
+            interface (DVP_Interface): DVP interface driver
             i2c (I2C): I2C object for communication
-            i2c_address (int, optional): I2C address (default: 0x24)
-            num_data_pins (int, optional): Number of data pins
-                - 1 (Default)
+            i2c_address (int, optional): I2C address of the camera (default: 0x24)
+            num_data_pins (int, optional): Number of data pins for the camera to
+                use:
+                - 1 (default)
                 - 4
                 - 8
+            xclk_freq (int, optional): Frequency of the XCLK signal in Hz
+                (default: 25MHz)
+            continuous (bool, optional): Whether to run in continuous capture
+                mode (default: False)
+            height (int, optional): Image height in pixels
+            width (int, optional): Image width in pixels
+            color_mode (int, optional): Color mode to use:
+                - COLOR_MODE_BAYER_RG (default)
+            buffer (ndarray, optional): Pre-allocated image buffer
         """
-        super().__init__(i2c, i2c_address)
+        # Store parameters
+        self._interface = interface
+        self._continuous = continuous
+        self._num_data_pins = num_data_pins
 
+        # Initialize the base DVP_Camera class
+        super().__init__(i2c, i2c_address, height, width, color_mode, buffer)
+
+        # Begin the interface driver
+        self._interface.begin(
+            self._buffer,
+            xclk_freq = xclk_freq,
+            num_data_pins = self._num_data_pins,
+            byte_swap = False,
+            continuous = self._continuous,
+        )
+
+        # Reset and initialize the camera
         self._soft_reset()
-        self._send_init(num_data_pins)
-    
+        self._send_init(self._num_data_pins)
+
+    def resolution_default(self):
+        """
+        Returns the default resolution of the camera.
+
+        Returns:
+            tuple: (height, width) in pixels
+        """
+        return (244, 324)
+
+    def resolution_is_supported(self, height, width):
+        """
+        Checks if the specified resolution is supported by the camera.
+
+        Args:
+            height (int): Image height in pixels
+            width (int): Image width in pixels
+        Returns:
+            bool: True if the resolution is supported, otherwise False
+        """
+        return (height, width) == (244, 324)
+
+    def color_mode_default(self):
+        """
+        Returns the default color mode of the camera.
+
+        Returns:
+            int: Color mode constant
+        """
+        return rv_colors.COLOR_MODE_BAYER_RG
+
+    def color_mode_is_supported(self, color_mode):
+        """
+        Checks if the specified color mode is supported by the camera.
+
+        Args:
+            color_mode (int): Color mode constant
+        Returns:
+            bool: True if the color mode is supported, otherwise False
+        """
+        return color_mode == rv_colors.COLOR_MODE_BAYER_RG
+
+    def open(self):
+        """
+        Opens the camera and prepares it for capturing images.
+        """
+        self._interface.open()
+
+    def release(self):
+        """
+        Releases the camera and frees any resources.
+        """
+        self._interface.release()
+
+    def isOpened(self):
+        """
+        Checks if the camera is opened.
+
+        Returns:
+            bool: True if the camera is opened, otherwise False
+        """
+        return self._interface.isOpened()
+
+    def grab(self):
+        """
+        Grabs a single frame from the camera.
+
+        Returns:
+            bool: True if the frame was grabbed successfully, otherwise False
+        """
+        return self._interface.grab()
+
     def _is_connected(self):
         """
         Checks if the camera is connected by reading the chip ID.
@@ -336,17 +441,33 @@ class HM01B0(DVP_Camera):
                     value = 0x02
             self._write_register(reg, value)
             sleep_us(1000)
-
-    def read(self, image=None):
-        """
-        Reads an image from the camera.
-
-        Args:
-            image (ndarray, optional): Image to read into
-
-        Returns:
-            tuple: (success, image)
-                - success (bool): True if the image was read, otherwise False
-                - image (ndarray): The captured image, or None if reading failed
-        """
-        return (True, cv2.cvtColor(self._buffer, cv2.COLOR_BayerRG2BGR, image))
+        
+        # When using only 1 data pin, the HM01B0 sets the PCLK to the same
+        # frequency as the XCLK, which is typically 24MHz. Because of the high
+        # frequency, the signal integrity can be more easily compromised. This
+        # is especially true with the SparkFun IoT RedBoard - RP2350, where the
+        # D0 pin also goes to the HSTX connector; if an HDMI cable is plugged
+        # in, it adds a lot of capacitance to the D0 pin. To help with signal
+        # integrity, we can increase the pin drive strength when using 1 data
+        # pin. (When 8 data pins are used, PCLK is typically 8x lower frequency
+        # than XCLK, so signal integrity is much less of a concern.)
+        if num_data_pins == 1:
+            # Page 42 of the HM01B0 datasheet:
+            # https://www.uctronics.com/download/Datasheet/HM01B0-MWA-image-sensor-datasheet.pdf
+            # 0x3062 (IO_DRIVE_STR): IO drive strength control
+            # [3:0] : PCLKO
+            # [7:4] : D[0]
+            # 
+            # Testing with a RedBoard - RP2350 has shown that setting the D[0]
+            # drive strength to 3 is sufficient to result in a clean eye pattern
+            # on an oscilloscope when an HDMI cable is connected. Increasing the
+            # PCLKO drive strength also make a cleaner square wave according to
+            # the oscilloscope. However, when the scope probe is disconnected,
+            # the image can become corrupted. The root problem is not known, but
+            # it's possible that the increased drive strength is causing
+            # oscillations on the PCLK line when there is no load from the scope
+            # probe. Additionally, increasing the drive strength increases
+            # power consumption and likely creates more EMI, so a balance seems
+            # to be needed. More testing may be needed to find optimal values,
+            # or make these configurable by the user.
+            self._write_register(self._IO_DRIVE_STR, 0x30)
