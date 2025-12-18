@@ -15,6 +15,9 @@
 # Import the Red Vision package.
 import red_vision as rv
 
+# Import the Pin class for the board's default pins.
+from machine import Pin
+
 ################################################################################
 # SPI Display
 ################################################################################
@@ -30,18 +33,18 @@ from .bus_spi import spi
 # the fastest option (24Mbps on RP2350).
 interface = rv.displays.SPI_Generic(
     spi = spi,
-    pin_dc = 20,
-    pin_cs = 21,
+    pin_dc = Pin.board.DISPLAY_DC,
+    pin_cs = Pin.board.DISPLAY_CS,
 )
 
 # PIO interface. This is only available on Raspberry Pi RP2 processors,
 # but is much faster than the SPI interface (75Mbps on RP2350).
 # interface = rv.displays.SPI_RP2_PIO(
 #     sm_id = 4,
-#     pin_clk = 22,
-#     pin_tx = 23,
-#     pin_dc = 20,
-#     pin_cs = 21,
+#     pin_clk = Pin.board.DISPLAY_CLK,
+#     pin_tx = Pin.board.DISPLAY_TX,
+#     pin_dc = Pin.board.DISPLAY_DC,
+#     pin_cs = Pin.board.DISPLAY_CS,
 # )
 
 ##########

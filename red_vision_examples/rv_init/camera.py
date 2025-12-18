@@ -15,6 +15,9 @@
 # Import the Red Vision package.
 import red_vision as rv
 
+# Import the Pin class for the board's default pins.
+from machine import Pin
+
 ################################################################################
 # DVP Camera
 ################################################################################
@@ -29,13 +32,13 @@ from .bus_i2c import i2c
 # PIO interface, only available on Raspberry Pi RP2 processors.
 interface = rv.cameras.DVP_RP2_PIO(
     sm_id = 5,
-    pin_d0 = 28,
-    pin_vsync = 42,
-    pin_hsync = 41,
-    pin_pclk = 40,
+    pin_d0 = Pin.board.CAMERA_D0,
+    pin_vsync = Pin.board.CAMERA_VSYNC,
+    pin_hsync = Pin.board.CAMERA_HSYNC,
+    pin_pclk = Pin.board.CAMERA_PCLK,
 
     # Optionally specify the XCLK pin if needed by your camera.
-    pin_xclk = 44,
+    # pin_xclk = Pin.board.CAMERA_XCLK,
 )
 
 ##########

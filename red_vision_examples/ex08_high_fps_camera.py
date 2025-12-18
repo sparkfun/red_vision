@@ -30,6 +30,7 @@ from ulab import numpy as np
 
 # Import machine and rp2 for I2C and PIO.
 import machine
+from machine import Pin
 import rp2
 i2c = machine.I2C()
 rp2.PIO(1).gpio_base(16)
@@ -61,8 +62,8 @@ interface_display = rv.displays.SPI_Generic(
     spi = machine.SPI(
         baudrate = 24_000_000,
     ),
-    pin_dc = 20,
-    pin_cs = 21,
+    pin_dc = Pin.board.DISPLAY_DC,
+    pin_cs = Pin.board.DISPLAY_CS,
 )
 driver_display = rv.displays.ST7789(
     interface = interface_display,
@@ -78,11 +79,11 @@ display = rv.displays.VideoDisplay(driver_display)
 # color format.
 interface_camera = rv.cameras.DVP_RP2_PIO(
     sm_id = 5,
-    pin_d0 = 28,
-    pin_vsync = 42,
-    pin_hsync = 41,
-    pin_pclk = 40,
-    pin_xclk = 44, # Specify the XCLK pin if needed by your camera.
+    pin_d0 = Pin.board.CAMERA_D0,
+    pin_vsync = Pin.board.CAMERA_VSYNC,
+    pin_hsync = Pin.board.CAMERA_HSYNC,
+    pin_pclk = Pin.board.CAMERA_PCLK,
+    pin_xclk = Pin.board.CAMERA_XCLK, # Specify the XCLK pin if needed.
 )
 driver_camera = rv.cameras.OV5640(
     interface = interface_camera,

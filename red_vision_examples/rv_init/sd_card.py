@@ -11,7 +11,7 @@
 # specific board and configuration.
 #-------------------------------------------------------------------------------
 
-# Import the Pin class for the chip select pin
+# Import the Pin class for the board's default pins.
 from machine import Pin
 
 # Import the SPI bus
@@ -25,8 +25,8 @@ from .bus_spi import spi
 spi_str = str(spi)
 baudrate = int(spi_str[spi_str.index("baudrate=") + 9:].partition(",")[0])
 
-# Set the chip select pin for the SD card
-sd_cs = Pin(7, Pin.OUT)
+# Set the chip select pin for the SD card.
+sd_cs = Pin(Pin.board.SD_CS, Pin.OUT)
 
 try:
     # Import the SD card module. This is often not installed by default in
