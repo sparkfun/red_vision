@@ -28,12 +28,16 @@ import cv2 as cv
 # Import NumPy.
 from ulab import numpy as np
 
-# Import machine and rp2 for I2C and PIO.
-import machine
-from machine import Pin
-import rp2
-i2c = machine.I2C()
-rp2.PIO(1).gpio_base(16)
+# Import the Pin class for the board's default pins, as well as SPI and I2C.
+from machine import Pin, SPI, I2C
+
+# When the Red Vision Kit for RedBoard is used with the IoT RedBoard RP2350,
+# both the display and camera use GPIO 16-47 instead of GPIO 0-31, so we need to
+# adjust the base GPIO for PIO drivers.
+import sys
+if "IoT RedBoard RP2350" in sys.implementation._machine:
+    import rp2
+    rp2.PIO(1).gpio_base(16)
 
 # Image size and bytes per pixel (depends on color mode). This example defaults
 # to 320x240 with BGR565.
@@ -59,7 +63,7 @@ if rv.utils.memory.is_in_external_ram(shared_buffer):
 # color format. SPI is used here for compatibility with most platforms, but
 # other interfaces can be faster.
 interface_display = rv.displays.SPI_Generic(
-    spi = machine.SPI(
+    spi = SPI(
         baudrate = 24_000_000,
     ),
     pin_dc = Pin.board.DISPLAY_DC,
@@ -87,7 +91,7 @@ interface_camera = rv.cameras.DVP_RP2_PIO(
 )
 driver_camera = rv.cameras.OV5640(
     interface = interface_camera,
-    i2c = i2c,
+    i2c = I2C(),
     continuous = True, # Continuous capture mode for fastest frame rate.
     height = height,
     width = width,

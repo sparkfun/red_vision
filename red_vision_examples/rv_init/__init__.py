@@ -14,8 +14,10 @@
 # When the Red Vision Kit for RedBoard is used with the IoT RedBoard RP2350,
 # both the display and camera use GPIO 16-47 instead of GPIO 0-31, so we need to
 # adjust the base GPIO for PIO drivers
-import rp2
-rp2.PIO(1).gpio_base(16)
+import sys
+if "IoT RedBoard RP2350" in sys.implementation._machine:
+    import rp2
+    rp2.PIO(1).gpio_base(16)
 
 # Import the camera driver
 try:
