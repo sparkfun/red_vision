@@ -10,6 +10,29 @@
 
 from machine import Pin
 
+def get_pin_number(pin):
+    """
+    Gets the GPIO pin number from a Pin object. This works for both
+    standard GPIO pins and board-specific Pin objects.
+
+    Args:
+        pin (Pin): The Pin object to get the number from.
+
+    Returns:
+        int: The GPIO pin number.
+    """
+    if type(pin) is int:
+        return pin
+    elif type(pin) is not Pin:
+        raise TypeError("Expected Pin object or int for pin parameter")
+    # Some boards use board-specific Pin objects that don't have a
+    # `pin.id()` method, so we convert the pin to a string and parse it.
+    # Example formats:
+    # "Pin(GPIO16)"
+    # "Pin(GPIO16, mode=OUT)"
+    pin_str = str(pin)
+    return int(pin_str[pin_str.index("GPIO") + 4:].partition(",")[0].partition(")")[0])
+
 def save_pin_mode_alt(pin):
     """
     Saves the current `mode` and `alt` of the pin so it can be restored

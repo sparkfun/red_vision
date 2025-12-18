@@ -21,6 +21,7 @@ from ulab import numpy as np
 from machine import Pin, PWM
 from uctypes import addressof
 from ..utils import memory as rv_memory
+from ..utils.pins import get_pin_number
 
 class DVP_RP2_PIO():
     """
@@ -87,7 +88,7 @@ class DVP_RP2_PIO():
         # Initialize DVP pins as inputs
         self._num_data_pins = num_data_pins
         for i in range(num_data_pins):
-            Pin(self._pin_d0+i, Pin.IN)
+            Pin(get_pin_number(self._pin_d0)+i, Pin.IN)
         Pin(self._pin_vsync, Pin.IN)
         Pin(self._pin_hsync, Pin.IN)
         Pin(self._pin_pclk, Pin.IN)
@@ -206,9 +207,9 @@ class DVP_RP2_PIO():
         program = self._pio_read_dvp
 
         # Mask in the GPIO pins
-        program[0][0] |= self._pin_hsync & 0x1F
-        program[0][1] |= self._pin_pclk & 0x1F
-        program[0][3] |= self._pin_pclk & 0x1F
+        program[0][0] |= get_pin_number(self._pin_hsync) & 0x1F
+        program[0][1] |= get_pin_number(self._pin_pclk) & 0x1F
+        program[0][3] |= get_pin_number(self._pin_pclk) & 0x1F
 
         # Mask in the number of data pins
         program[0][2] |= self._num_data_pins
